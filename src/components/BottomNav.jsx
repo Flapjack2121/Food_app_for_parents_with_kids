@@ -2,7 +2,7 @@ import { HomeIcon, ChefIcon, BasketIcon, HeartIcon } from './icons.jsx';
 
 const tabs = [
   { id: 'home', label: 'Home', Icon: HomeIcon },
-  { id: 'recipe', label: 'Recipes', Icon: ChefIcon },
+  { id: 'plan', label: 'Plan', Icon: ChefIcon },
   { id: 'list', label: 'List', Icon: BasketIcon },
   { id: 'favorites', label: 'Favorites', Icon: HeartIcon },
 ];

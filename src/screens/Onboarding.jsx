@@ -2,21 +2,38 @@ import { useState } from 'react';
 import { storage } from '../lib/storage.js';
 import { ArrowRight, PlusIcon, CheckIcon } from '../components/icons.jsx';
 
-const ALLERGY_OPTIONS = ['Nuts', 'Dairy', 'Gluten', 'Eggs'];
+const ALLERGY_OPTIONS = [
+  'Nuts',
+  'Dairy',
+  'Gluten',
+  'Eggs',
+  'Soy',
+  'Shellfish',
+  'Vegetarian',
+  'Vegan',
+  'No Pork',
+];
+
+const SKILLS = [
+  { id: 'beginner', label: 'Beginner', sub: 'Simple steps, extra tips' },
+  { id: 'comfortable', label: 'Comfortable', sub: 'Balanced weeknight cooking' },
+  { id: 'confident', label: 'Confident', sub: 'Real techniques, more variety' },
+];
 
 export default function Onboarding({ onDone }) {
   const [step, setStep] = useState(0);
-  const [name, setName] = useState('');
+  const [parentName, setParentName] = useState('');
   const [count, setCount] = useState(1);
-  const [kids, setKids] = useState([{ age: 5, picky: false }]);
+  const [children, setChildren] = useState([{ name: '', age: 5, pickyEater: false }]);
   const [allergies, setAllergies] = useState([]);
+  const [cookingSkill, setCookingSkill] = useState('comfortable');
 
   const updateCount = (n) => {
     const c = Math.max(1, Math.min(6, n));
     setCount(c);
-    setKids((prev) => {
+    setChildren((prev) => {
       const next = [...prev];
-      while (next.length < c) next.push({ age: 5, picky: false });
+      while (next.length < c) next.push({ name: '', age: 5, pickyEater: false });
       while (next.length > c) next.pop();
       return next;
     });
@@ -26,11 +43,16 @@ export default function Onboarding({ onDone }) {
     setAllergies((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
 
   const finish = () => {
-    storage.setProfile({ name: name.trim() || 'there', kids, allergies });
+    storage.setProfile({
+      parentName: parentName.trim() || 'there',
+      children,
+      allergies,
+      cookingSkill,
+    });
     onDone();
   };
 
-  const next = () => setStep((s) => s + 1);
+  const next = () => setStep((s) => Math.min(3, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
 
   const Header = () => (
@@ -38,13 +60,13 @@ export default function Onboarding({ onDone }) {
       <Logo />
       <div>
         <div className="font-extrabold text-brand-green leading-tight text-lg">Little Helpers</div>
-        <div className="text-xs text-brand-green/70">Hungry minds. Happy families.</div>
+        <div className="text-xs text-brand-green/70">Simple meals. Happy families.</div>
       </div>
     </div>
   );
 
   return (
-    <div className="flex flex-col flex-1 bg-brand-cream">
+    <div className="flex flex-col flex-1 bg-brand-cream overflow-y-auto no-scrollbar">
       <Header />
 
       <div className="px-5 pt-3 pb-2">
@@ -53,11 +75,11 @@ export default function Onboarding({ onDone }) {
 
       <div className="flex-1 px-5 pb-5">
         {step === 0 && (
-          <Card title="Hi there! 👋" subtitle="What should we call you?">
+          <Card title="Hi! 👋" subtitle="What's your name?">
             <input
               autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={parentName}
+              onChange={(e) => setParentName(e.target.value)}
               placeholder="Your name"
               className="w-full bg-white rounded-2xl px-4 py-3 text-base outline-none border border-black/5 focus:border-brand-green/60"
             />
@@ -65,42 +87,41 @@ export default function Onboarding({ onDone }) {
         )}
 
         {step === 1 && (
-          <Card title="How many kids?" subtitle="We'll tune recipes for them.">
-            <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-3">
-              <button
-                className="w-9 h-9 rounded-full bg-brand-cream text-brand-green text-lg font-bold"
-                onClick={() => updateCount(count - 1)}
-              >
-                −
-              </button>
-              <div className="text-3xl font-bold text-brand-green">{count}</div>
-              <button
-                className="w-9 h-9 rounded-full bg-brand-cream text-brand-green text-lg font-bold"
-                onClick={() => updateCount(count + 1)}
-              >
-                +
-              </button>
-            </div>
-          </Card>
-        )}
+          <>
+            <Card title="How many kids?" subtitle="Tap to adjust.">
+              <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-3">
+                <Round onClick={() => updateCount(count - 1)}>−</Round>
+                <div className="text-3xl font-bold text-brand-green">{count}</div>
+                <Round onClick={() => updateCount(count + 1)}>+</Round>
+              </div>
+            </Card>
 
-        {step === 2 && (
-          <Card title="Tell us about them" subtitle="Age and any picky eaters?">
-            <div className="space-y-3">
-              {kids.map((k, i) => (
+            <div className="mt-3 space-y-2">
+              {children.map((k, i) => (
                 <div key={i} className="bg-white rounded-2xl p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="font-semibold text-brand-green">Kid {i + 1}</div>
+                    <input
+                      value={k.name}
+                      onChange={(e) =>
+                        setChildren((prev) =>
+                          prev.map((x, j) => (j === i ? { ...x, name: e.target.value } : x))
+                        )
+                      }
+                      placeholder={`Kid ${i + 1} name`}
+                      className="bg-brand-cream rounded-lg px-3 py-1.5 text-sm font-semibold text-brand-green outline-none w-32"
+                    />
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-black/60">Age</span>
                       <input
                         type="number"
                         min="0"
-                        max="18"
+                        max="12"
                         value={k.age}
                         onChange={(e) => {
                           const v = Number(e.target.value || 0);
-                          setKids((prev) => prev.map((x, j) => (j === i ? { ...x, age: v } : x)));
+                          setChildren((prev) =>
+                            prev.map((x, j) => (j === i ? { ...x, age: v } : x))
+                          );
                         }}
                         className="w-16 bg-brand-cream rounded-lg px-2 py-1 text-center"
                       />
@@ -109,20 +130,22 @@ export default function Onboarding({ onDone }) {
                   <label className="flex items-center justify-between text-sm">
                     <span>Picky eater</span>
                     <Toggle
-                      on={k.picky}
+                      on={k.pickyEater}
                       onChange={(on) =>
-                        setKids((prev) => prev.map((x, j) => (j === i ? { ...x, picky: on } : x)))
+                        setChildren((prev) =>
+                          prev.map((x, j) => (j === i ? { ...x, pickyEater: on } : x))
+                        )
                       }
                     />
                   </label>
                 </div>
               ))}
             </div>
-          </Card>
+          </>
         )}
 
-        {step === 3 && (
-          <Card title="Any allergies?" subtitle="We'll keep these out of every recipe.">
+        {step === 2 && (
+          <Card title="Allergies & restrictions" subtitle="We'll keep these out of every recipe.">
             <div className="grid grid-cols-2 gap-2">
               {ALLERGY_OPTIONS.map((a) => {
                 const on = allergies.includes(a);
@@ -130,7 +153,7 @@ export default function Onboarding({ onDone }) {
                   <button
                     key={a}
                     onClick={() => toggleAllergy(a)}
-                    className={`flex items-center justify-between rounded-2xl px-4 py-3 border text-sm ${
+                    className={`flex items-center justify-between rounded-2xl px-3 py-2.5 border text-sm ${
                       on
                         ? 'bg-brand-green text-white border-brand-green'
                         : 'bg-white text-brand-green border-black/5'
@@ -138,6 +161,35 @@ export default function Onboarding({ onDone }) {
                   >
                     <span className="font-medium">{a}</span>
                     {on ? <CheckIcon size={18} stroke="#fff" /> : <PlusIcon size={18} />}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {step === 3 && (
+          <Card title="Cooking skill" subtitle="So we can match recipe complexity.">
+            <div className="space-y-2">
+              {SKILLS.map((s) => {
+                const on = cookingSkill === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setCookingSkill(s.id)}
+                    className={`w-full flex items-center justify-between rounded-2xl px-4 py-3 border text-left ${
+                      on
+                        ? 'bg-brand-green text-white border-brand-green'
+                        : 'bg-white text-brand-green border-black/5'
+                    }`}
+                  >
+                    <div>
+                      <div className="font-semibold">{s.label}</div>
+                      <div className={`text-xs ${on ? 'text-white/80' : 'text-black/55'}`}>
+                        {s.sub}
+                      </div>
+                    </div>
+                    {on && <CheckIcon size={18} stroke="#fff" />}
                   </button>
                 );
               })}
@@ -198,6 +250,17 @@ function Toggle({ on, onChange }) {
           on ? 'translate-x-5' : ''
         }`}
       />
+    </button>
+  );
+}
+
+function Round({ children, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-9 h-9 rounded-full bg-brand-cream text-brand-green text-lg font-bold"
+    >
+      {children}
     </button>
   );
 }

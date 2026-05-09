@@ -2,6 +2,9 @@ const KEYS = {
   profile: 'lh.profile',
   favorites: 'lh.favorites',
   shoppingList: 'lh.shoppingList',
+  weekPlan: 'lh.weekPlan',
+  lastIngredients: 'lh.lastIngredients',
+  ratings: 'lh.ratings',
 };
 
 function read(key, fallback) {
@@ -35,6 +38,17 @@ export const storage = {
 
   getShoppingList: () => read(KEYS.shoppingList, null),
   setShoppingList: (sl) => write(KEYS.shoppingList, sl),
-};
 
-export const KEYS_INTERNAL = KEYS;
+  getWeekPlan: () => read(KEYS.weekPlan, null),
+  setWeekPlan: (wp) => write(KEYS.weekPlan, wp),
+
+  getLastIngredients: () => read(KEYS.lastIngredients, []),
+  setLastIngredients: (list) => write(KEYS.lastIngredients, list),
+
+  getRatings: () => read(KEYS.ratings, []),
+  addRating: (entry) => {
+    const list = read(KEYS.ratings, []).filter((r) => r.recipeId !== entry.recipeId);
+    list.unshift(entry);
+    write(KEYS.ratings, list.slice(0, 50));
+  },
+};
