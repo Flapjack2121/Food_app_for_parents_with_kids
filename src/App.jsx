@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import PhoneFrame from './components/PhoneFrame.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import Onboarding from './screens/Onboarding.jsx';
@@ -14,18 +14,11 @@ export default function App() {
   const [tab, setTab] = useState('home');
   const [recipe, setRecipe] = useState(null);
   const [lastRequest, setLastRequest] = useState(null);
+  const [seenTitles, setSeenTitles] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [favorites, setFavorites] = useState(() => storage.getFavorites());
   const [shoppingList, setShoppingList] = useState(() => storage.getShoppingList());
-
-  useEffect(() => {
-    if (recipe) {
-      const onStorage = () => setFavorites(storage.getFavorites());
-      window.addEventListener('storage', onStorage);
-      return () => window.removeEventListener('storage', onStorage);
-    }
-  }, [recipe]);
 
   if (!profile) {
     return (
@@ -35,13 +28,15 @@ export default function App() {
     );
   }
 
-  const fetchRecipe = async (req) => {
+  const fetchRecipe = async (req, { append = false } = {}) => {
     setBusy(true);
     setError(null);
     try {
-      const r = await generateRecipe({ ...req, profile });
+      const avoid = append ? seenTitles.slice(-4) : [];
+      const r = await generateRecipe({ ...req, profile, avoidTitles: avoid });
       setRecipe(r);
       setLastRequest(req);
+      setSeenTitles((prev) => (append ? [...prev, r.title] : [r.title]));
       setTab('recipe');
     } catch (e) {
       console.error(e);
@@ -51,6 +46,11 @@ export default function App() {
     }
   };
 
+  const nextIdea = () => {
+    const req = lastRequest || { ingredients: [], mode: 'normal' };
+    fetchRecipe(req, { append: true });
+  };
+
   const cookThis = () => {
     if (!recipe) return;
     const items = (recipe.missingIngredients || []).map((it) => ({ ...it, checked: false }));
@@ -58,10 +58,6 @@ export default function App() {
     storage.setShoppingList(sl);
     setShoppingList(sl);
     setTab('list');
-  };
-
-  const onTab = (next) => {
-    setTab(next);
   };
 
   return (
@@ -74,14 +70,14 @@ export default function App() {
         )}
 
         {tab === 'home' && (
-          <Home profile={profile} onFind={fetchRecipe} busy={busy} />
+          <Home profile={profile} onFind={(req) => fetchRecipe(req)} busy={busy} />
         )}
 
         {tab === 'recipe' && (
           <Recipe
             recipe={recipe}
             onCook={cookThis}
-            onNext={() => lastRequest && fetchRecipe(lastRequest)}
+            onNext={nextIdea}
             onBack={() => setTab('home')}
             busy={busy}
           />
@@ -96,7 +92,6 @@ export default function App() {
             favorites={favorites}
             onOpen={(r) => {
               setRecipe(r);
-              setLastRequest(null);
               setTab('recipe');
             }}
           />
@@ -106,7 +101,7 @@ export default function App() {
           active={tab}
           onChange={(next) => {
             if (next === 'favorites') setFavorites(storage.getFavorites());
-            onTab(next);
+            setTab(next);
           }}
         />
       </div>
