@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 
-export default function CookMode({ recipe, onClose }) {
+export default function CookMode({ recipe, onClose, onFinish }) {
   const [stepIdx, setStepIdx] = useState(0);
   const [secsLeft, setSecsLeft] = useState(0);
   const [running, setRunning] = useState(false);
+  const [ratingOpen, setRatingOpen] = useState(false);
   const tickRef = useRef(null);
   const beepRef = useRef(null);
 
@@ -179,7 +180,7 @@ export default function CookMode({ recipe, onClose }) {
         </button>
         {isLast ? (
           <button
-            onClick={onClose}
+            onClick={() => setRatingOpen(true)}
             className="rounded-2xl bg-brand-orange text-white font-semibold py-4 active:scale-[0.99]"
           >
             ✓ Done Cooking
@@ -192,6 +193,61 @@ export default function CookMode({ recipe, onClose }) {
             Next →
           </button>
         )}
+      </div>
+
+      {ratingOpen && (
+        <RatingSheet
+          onPick={(rating) => {
+            setRatingOpen(false);
+            onFinish?.({ rating });
+          }}
+          onSkip={() => {
+            setRatingOpen(false);
+            onFinish?.({ rating: null });
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function RatingSheet({ onPick, onSkip }) {
+  const opts = [
+    { id: 'disliked', emoji: '👎', label: 'Kids hated it' },
+    { id: 'okay', emoji: '😐', label: 'It was okay' },
+    { id: 'loved', emoji: '👍', label: 'Kids loved it!' },
+  ];
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onSkip} />
+      <div
+        className="relative bg-white w-full max-w-[390px] rounded-t-3xl p-5 pb-7"
+        style={{ boxShadow: '0 -10px 30px rgba(0,0,0,0.15)' }}
+      >
+        <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mb-4" />
+        <div className="text-lg font-extrabold text-brand-green text-center">
+          How did it go?
+        </div>
+        <div className="text-xs text-black/60 text-center mb-3">
+          We'll learn what your family likes.
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {opts.map((o) => (
+            <button
+              key={o.id}
+              onClick={() => onPick(o.id)}
+              className="bg-brand-cream rounded-2xl p-3 flex flex-col items-center text-center border border-black/5 active:scale-[0.99]"
+            >
+              <span className="text-3xl">{o.emoji}</span>
+              <span className="text-[11px] font-semibold text-brand-green mt-1">
+                {o.label}
+              </span>
+            </button>
+          ))}
+        </div>
+        <button onClick={onSkip} className="w-full mt-3 text-sm text-black/60 font-medium">
+          Skip
+        </button>
       </div>
     </div>
   );

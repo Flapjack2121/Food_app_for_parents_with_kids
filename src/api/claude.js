@@ -119,6 +119,21 @@ Return ONLY valid JSON (no prose, no markdown fences) matching this exact schema
 ${jsonShape()}`;
 }
 
+function buildClonePrompt({ dishName, profile }) {
+  return `You are a family cooking assistant.
+
+Create a healthy homemade version of "${dishName}" that looks and tastes similar enough for picky toddlers to accept it. Use simple ingredients (max 6 total), no deep-frying, minimal processing. The dish must remain visually recognisable as the requested item.
+
+Family profile:
+${profileBlock(profile)}
+
+Strictly avoid every listed allergy/restriction.
+
+Return ONLY valid JSON (no prose, no markdown fences) in this exact shape:
+
+${jsonShape()}`;
+}
+
 function buildAdjustmentPrompt({ recipe, problem, profile }) {
   return `You previously suggested this recipe:
 
@@ -513,6 +528,114 @@ function swapForProblem(recipe, problem) {
   clone.title = `${recipe.title} (kid-friendly)`;
   clone.kidFriendlyReason = `Adjusted: ${problem}`;
   return clone;
+}
+
+function mockClone(dishName) {
+  const lower = dishName.toLowerCase();
+  const PRESETS = {
+    nugget: {
+      title: 'Homemade Crispy Chicken Bites',
+      imageQuery: 'baked chicken nuggets',
+      ingredients: [
+        { name: 'Chicken breast', amount: 400, unit: 'g', category: 'Meat' },
+        { name: 'Egg', amount: 1, unit: 'piece', category: 'Dairy' },
+        { name: 'Breadcrumbs', amount: 1, unit: 'cup', category: 'Pantry' },
+        { name: 'Olive oil', amount: 1, unit: 'tbsp', category: 'Pantry' },
+        { name: 'Salt', amount: 1, unit: 'pinch', category: 'Pantry' },
+      ],
+      steps: [
+        { stepNumber: 1, instruction: 'Heat oven to 200°C / 400°F. Line a tray with baking paper.', timerSeconds: 0 },
+        { stepNumber: 2, instruction: 'Cut chicken into bite-sized pieces.', timerSeconds: 0 },
+        { stepNumber: 3, instruction: 'Dip each piece in beaten egg, then breadcrumbs.', timerSeconds: 0 },
+        { stepNumber: 4, instruction: 'Lay on tray, brush with oil, bake 15 minutes.', timerSeconds: 900 },
+      ],
+    },
+    pizza: {
+      title: 'Mini Margherita Pita Pizzas',
+      imageQuery: 'mini margherita pita pizza',
+      ingredients: [
+        { name: 'Pita breads', amount: 4, unit: 'pieces', category: 'Pantry' },
+        { name: 'Tomato sauce', amount: 0.5, unit: 'cup', category: 'Pantry' },
+        { name: 'Mozzarella', amount: 150, unit: 'g', category: 'Dairy' },
+        { name: 'Olive oil', amount: 1, unit: 'tbsp', category: 'Pantry' },
+      ],
+      steps: [
+        { stepNumber: 1, instruction: 'Heat oven to 220°C / 425°F.', timerSeconds: 0 },
+        { stepNumber: 2, instruction: 'Brush pitas with oil, spread sauce, scatter cheese.', timerSeconds: 0 },
+        { stepNumber: 3, instruction: 'Bake 8 minutes until cheese bubbles.', timerSeconds: 480 },
+      ],
+    },
+    burger: {
+      title: 'Mini Homemade Beef Burgers',
+      imageQuery: 'mini beef burgers',
+      ingredients: [
+        { name: 'Ground beef (lean)', amount: 400, unit: 'g', category: 'Meat' },
+        { name: 'Mini buns', amount: 4, unit: 'pieces', category: 'Pantry' },
+        { name: 'Cheddar', amount: 60, unit: 'g', category: 'Dairy' },
+        { name: 'Olive oil', amount: 1, unit: 'tbsp', category: 'Pantry' },
+        { name: 'Salt', amount: 1, unit: 'pinch', category: 'Pantry' },
+      ],
+      steps: [
+        { stepNumber: 1, instruction: 'Shape beef into 4 small patties; salt lightly.', timerSeconds: 0 },
+        { stepNumber: 2, instruction: 'Pan-fry on medium-high 3 minutes per side.', timerSeconds: 360 },
+        { stepNumber: 3, instruction: 'Top with cheese, melt 30 seconds, build buns.', timerSeconds: 30 },
+      ],
+    },
+    fries: {
+      title: 'Crispy Oven Potato Wedges',
+      imageQuery: 'oven baked potato wedges',
+      ingredients: [
+        { name: 'Potatoes', amount: 600, unit: 'g', category: 'Vegetables' },
+        { name: 'Olive oil', amount: 2, unit: 'tbsp', category: 'Pantry' },
+        { name: 'Salt', amount: 1, unit: 'pinch', category: 'Pantry' },
+        { name: 'Paprika (sweet)', amount: 1, unit: 'tsp', category: 'Pantry' },
+      ],
+      steps: [
+        { stepNumber: 1, instruction: 'Heat oven to 220°C / 425°F.', timerSeconds: 0 },
+        { stepNumber: 2, instruction: 'Cut potatoes into wedges. Toss with oil, salt, paprika.', timerSeconds: 0 },
+        { stepNumber: 3, instruction: 'Roast 25 minutes, flipping halfway.', timerSeconds: 1500 },
+      ],
+    },
+  };
+  let key = null;
+  if (/(nugget|chicken bite|tender)/.test(lower)) key = 'nugget';
+  else if (/pizza/.test(lower)) key = 'pizza';
+  else if (/(burger|patty)/.test(lower)) key = 'burger';
+  else if (/(fries|chips|wedge)/.test(lower)) key = 'fries';
+  const preset = PRESETS[key] || PRESETS.nugget;
+  return {
+    description: `A homemade, kid-friendly take on ${dishName}.`,
+    prepTime: 25,
+    servings: 4,
+    difficulty: 'Easy',
+    kidFriendly: true,
+    kidFriendlyReason: 'Familiar shape and flavor, mild seasoning',
+    calories: 380,
+    protein: 22,
+    carbs: 30,
+    tags: ['homemade', 'clone'],
+    ...preset,
+  };
+}
+
+export async function cloneDish({ dishName, profile }) {
+  const client = getClient();
+  if (!client) {
+    return normaliseRecipe({ ...mockClone(dishName), id: newId() }, []);
+  }
+  const prompt = buildClonePrompt({ dishName, profile });
+  const res = await client.messages.create({
+    model: MODEL,
+    max_tokens: 1500,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const text = res.content
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text)
+    .join('\n');
+  const parsed = extractJson(text);
+  const r = parsed.recipes?.[0] || parsed;
+  return normaliseRecipe({ ...r, id: newId() }, []);
 }
 
 export async function generateWeekPlan({ profile, context = {} }) {

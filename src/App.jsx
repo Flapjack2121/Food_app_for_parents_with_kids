@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PhoneFrame from './components/PhoneFrame.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import Onboarding from './screens/Onboarding.jsx';
@@ -8,8 +8,8 @@ import ShoppingList from './screens/ShoppingList.jsx';
 import Favorites from './screens/Favorites.jsx';
 import Plan from './screens/Plan.jsx';
 import CookMode from './screens/CookMode.jsx';
-import { storage } from './lib/storage.js';
-import { generateRecipes, adjustRecipe } from './api/claude.js';
+import { storage, BADGES } from './lib/storage.js';
+import { generateRecipes, adjustRecipe, cloneDish } from './api/claude.js';
 
 const CATEGORIES = ['Vegetables', 'Dairy', 'Meat', 'Pantry', 'Frozen'];
 
@@ -28,6 +28,19 @@ export default function App() {
   const [lastIngredients, setLastIngredients] = useState(() => storage.getLastIngredients());
   const [cookOpen, setCookOpen] = useState(false);
 
+  const [stats, setStats] = useState(() => storage.getStats());
+  const [earnedBadges, setEarnedBadges] = useState(() => storage.getBadges());
+  const [badgeToast, setBadgeToast] = useState(null);
+  const [dailySuggestion, setDailySuggestion] = useState(() => storage.getDailySuggestion());
+  const [dailyLoading, setDailyLoading] = useState(false);
+
+  useEffect(() => {
+    if (!profile) return;
+    if (!dailySuggestion) {
+      fetchDailySuggestion();
+    }
+  }, [profile]);
+
   if (!profile) {
     return (
       <PhoneFrame>
@@ -35,6 +48,37 @@ export default function App() {
       </PhoneFrame>
     );
   }
+
+  async function fetchDailySuggestion() {
+    setDailyLoading(true);
+    try {
+      const list = await generateRecipes({
+        ingredients: [],
+        profile,
+        context: {
+          mode: 'normal',
+          lovedRecipes: storage.getLovedTitles(),
+          dislikedRecipes: storage.getDislikedTitles(),
+        },
+        count: 1,
+      });
+      const r = list[0];
+      if (r) {
+        storage.setDailySuggestion(r);
+        setDailySuggestion(r);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDailyLoading(false);
+    }
+  }
+
+  const refreshSuggestion = () => {
+    storage.clearDailySuggestion();
+    setDailySuggestion(null);
+    fetchDailySuggestion();
+  };
 
   const fetchAndShow = async ({ ingredients = [], context = {} }) => {
     setBusy(true);
@@ -47,7 +91,12 @@ export default function App() {
       const list = await generateRecipes({
         ingredients,
         profile,
-        context: { ...context, avoidTitles: seenTitles.slice(-6) },
+        context: {
+          ...context,
+          avoidTitles: seenTitles.slice(-6),
+          lovedRecipes: storage.getLovedTitles(),
+          dislikedRecipes: storage.getDislikedTitles(),
+        },
         count: 3,
       });
       if (!list.length) throw new Error('No recipes returned');
@@ -92,6 +141,24 @@ export default function App() {
     }
   };
 
+  const handleClone = async (dishName) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await cloneDish({ dishName, profile });
+      setRecipe(r);
+      setRecipeQueue([]);
+      setLastRequest(null);
+      setSeenTitles((prev) => [...prev, r.title]);
+      setTab('recipe');
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Couldn't build that clone.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const startCooking = () => {
     if (!recipe) return;
     const items = (recipe.missingIngredients || []).map((it) => ({ ...it, checked: false }));
@@ -107,6 +174,26 @@ export default function App() {
       setShoppingList(sl);
     }
     setCookOpen(true);
+  };
+
+  const finishCooking = ({ rating }) => {
+    if (recipe) {
+      storage.recordCook(recipe);
+      if (rating) {
+        storage.addRating({ recipeId: recipe.id, title: recipe.title, rating });
+      }
+      const { earned, newly, stats: nextStats } = storage.refreshBadges();
+      setStats(nextStats);
+      setEarnedBadges(earned);
+      if (newly.length > 0) {
+        const b = BADGES.find((x) => x.id === newly[0]);
+        if (b) {
+          setBadgeToast(b);
+          setTimeout(() => setBadgeToast(null), 4000);
+        }
+      }
+    }
+    setCookOpen(false);
   };
 
   const buildShoppingFromPlan = (recipes) => {
@@ -135,6 +222,18 @@ export default function App() {
     };
     storage.setShoppingList(sl);
     setShoppingList(sl);
+    if (recipes.length >= 7) {
+      storage.markWeekPlanCompleted();
+      const { earned, newly } = storage.refreshBadges();
+      setEarnedBadges(earned);
+      if (newly.length > 0) {
+        const b = BADGES.find((x) => x.id === newly[0]);
+        if (b) {
+          setBadgeToast(b);
+          setTimeout(() => setBadgeToast(null), 4000);
+        }
+      }
+    }
     setTab('list');
   };
 
@@ -151,6 +250,18 @@ export default function App() {
           <Home
             profile={profile}
             lastIngredients={lastIngredients}
+            stats={stats}
+            earnedBadges={earnedBadges}
+            dailySuggestion={dailySuggestion}
+            dailySuggestionLoading={dailyLoading}
+            onRefreshSuggestion={refreshSuggestion}
+            onOpenSuggestion={(r) => {
+              setRecipe(r);
+              setRecipeQueue([]);
+              setLastRequest(null);
+              setTab('recipe');
+            }}
+            onClone={handleClone}
             onFind={fetchAndShow}
             busy={busy}
           />
@@ -202,7 +313,21 @@ export default function App() {
         />
 
         {cookOpen && recipe && (
-          <CookMode recipe={recipe} onClose={() => setCookOpen(false)} />
+          <CookMode
+            recipe={recipe}
+            onClose={() => setCookOpen(false)}
+            onFinish={finishCooking}
+          />
+        )}
+
+        {badgeToast && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-brand-green text-white px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 animate-[fadeIn_0.3s]">
+            <div className="text-2xl">{badgeToast.emoji}</div>
+            <div>
+              <div className="text-xs font-semibold opacity-80">Badge unlocked!</div>
+              <div className="text-sm font-bold">{badgeToast.name}</div>
+            </div>
+          </div>
         )}
       </div>
     </PhoneFrame>
