@@ -3,11 +3,11 @@ import { CheckIcon } from '../components/icons.jsx';
 import { storage } from '../lib/storage.js';
 
 const CATEGORIES = [
-  { id: 'Vegetables', emoji: '🥦' },
-  { id: 'Dairy', emoji: '🥛' },
-  { id: 'Meat', emoji: '🥩' },
-  { id: 'Pantry', emoji: '🥫' },
-  { id: 'Frozen', emoji: '❄️' },
+  { id: 'Vegetables', emoji: '🥦', color: '#5B8E3E' },
+  { id: 'Dairy', emoji: '🥛', color: '#7BA7C6' },
+  { id: 'Meat', emoji: '🥩', color: '#C25A4F' },
+  { id: 'Pantry', emoji: '🥫', color: '#D8A24F' },
+  { id: 'Frozen', emoji: '❄️', color: '#7DB8D9' },
 ];
 
 export default function ShoppingList({ list, onChange }) {
@@ -71,40 +71,47 @@ export default function ShoppingList({ list, onChange }) {
       setShareToast('Copied to clipboard!');
       setTimeout(() => setShareToast(''), 2000);
     } catch {
-      setShareToast('Could not share — copy below.');
+      setShareToast('Could not share.');
       setTimeout(() => setShareToast(''), 2500);
     }
   };
 
   return (
-    <div className="flex-1 overflow-y-auto no-scrollbar bg-brand-cream">
+    <div className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-5 pt-12 pb-2 flex items-center">
-        <div className="text-xl font-extrabold text-brand-green">Shopping List</div>
+        <div>
+          <div className="text-2xl font-extrabold text-brand-green tracking-tight">
+            Shopping List
+          </div>
+          <div className="text-[11px] text-brand-green/60 font-medium">
+            {items.length} {items.length === 1 ? 'item' : 'items'} · {checkedCount} checked
+          </div>
+        </div>
         <button
           onClick={shareList}
           disabled={items.length === 0}
-          className="ml-auto text-sm font-semibold text-white bg-brand-orange px-3 py-1.5 rounded-full disabled:opacity-40"
+          className="ml-auto btn-orange text-sm font-bold text-white px-4 py-2 rounded-full disabled:opacity-40"
         >
           Share
         </button>
       </div>
 
       {items.length === 0 ? (
-        <div className="px-5 mt-10 text-center text-black/60">
-          <div className="text-3xl mb-1">🛒</div>
-          <div className="font-medium text-brand-green">Your list is empty.</div>
-          <div className="text-sm">
+        <div className="px-5 mt-12 text-center text-black/60">
+          <div className="text-4xl mb-2">🛒</div>
+          <div className="font-bold text-brand-green">Your list is empty.</div>
+          <div className="text-sm mt-1">
             Tap "Cook This!" on a recipe or build one from your week plan.
           </div>
         </div>
       ) : (
         <>
-          <div className="px-5 mt-2">
-            <div className="bg-white rounded-2xl px-4 py-3 border border-black/5">
+          <div className="px-5 mt-3">
+            <div className="bg-white rounded-2xl px-4 py-3 shadow-soft">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-brand-green font-semibold">For how many people?</span>
-                <span className="font-bold text-brand-green">
-                  {servings} {servings === 1 ? 'person' : 'people'}
+                <span className="text-brand-green font-bold">For how many people?</span>
+                <span className="font-extrabold text-brand-green text-base tabular-nums">
+                  {servings}
                 </span>
               </div>
               <input
@@ -118,33 +125,41 @@ export default function ShoppingList({ list, onChange }) {
             </div>
           </div>
 
-          <div className="px-5 mt-3 space-y-3">
+          <div className="px-5 mt-3 space-y-3 pb-24">
             {CATEGORIES.map((c) => {
               const rows = grouped[c.id];
               if (rows.length === 0) return null;
               return (
-                <div key={c.id} className="bg-white rounded-2xl overflow-hidden border border-black/5">
-                  <div className="px-4 py-2 text-sm font-semibold text-brand-green bg-brand-cream/60 flex items-center gap-2">
+                <div key={c.id} className="bg-white rounded-2xl overflow-hidden shadow-soft">
+                  <div
+                    className="px-4 py-2.5 text-sm font-bold flex items-center gap-2"
+                    style={{ background: `${c.color}15`, color: c.color }}
+                  >
                     <span>{c.emoji}</span>
                     <span>{c.id}</span>
+                    <span className="ml-auto text-[10px] uppercase tracking-wider opacity-70">
+                      {rows.length}
+                    </span>
                   </div>
                   <ul className="divide-y divide-black/5">
                     {rows.map((it) => (
                       <li
                         key={it._idx}
-                        className="px-4 py-2.5 flex items-center gap-3 cursor-pointer"
+                        className="px-4 py-3 flex items-center gap-3 cursor-pointer active:bg-black/5 transition-colors"
                         onClick={() => toggle(it._idx)}
                       >
                         <span
-                          className={`w-5 h-5 rounded-md border flex items-center justify-center ${
-                            it.checked ? 'bg-brand-green border-brand-green' : 'border-black/20'
+                          className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
+                            it.checked
+                              ? 'bg-brand-green'
+                              : 'bg-white ring-1 ring-black/15'
                           }`}
                         >
                           {it.checked && <CheckIcon size={14} stroke="#fff" sw={3} />}
                         </span>
                         <span
                           className={`flex-1 text-sm ${
-                            it.checked ? 'line-through text-black/40' : ''
+                            it.checked ? 'line-through text-black/35' : 'font-medium'
                           }`}
                         >
                           {it.name}
@@ -161,29 +176,21 @@ export default function ShoppingList({ list, onChange }) {
                 </div>
               );
             })}
+
+            {checkedCount > 0 && (
+              <button
+                onClick={clearChecked}
+                className="w-full text-sm font-bold text-brand-orange bg-white rounded-2xl py-3 shadow-soft"
+              >
+                Clear {checkedCount} checked {checkedCount === 1 ? 'item' : 'items'}
+              </button>
+            )}
           </div>
         </>
       )}
 
-      <div className="px-5 mt-5 pb-6">
-        <div className="bg-white rounded-2xl px-4 py-3 flex items-center border border-black/5">
-          <div className="text-sm text-black/70">
-            <span className="font-bold text-brand-green">{checkedCount}</span> of{' '}
-            <span className="font-bold text-brand-green">{items.length}</span> items checked
-          </div>
-          {checkedCount > 0 && (
-            <button
-              onClick={clearChecked}
-              className="ml-auto text-sm font-semibold text-brand-orange"
-            >
-              Clear checked
-            </button>
-          )}
-        </div>
-      </div>
-
       {shareToast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-brand-green text-white text-sm px-4 py-2 rounded-full shadow-lg z-40">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-brand-green text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg z-40 animate-fade-in-up">
           {shareToast}
         </div>
       )}

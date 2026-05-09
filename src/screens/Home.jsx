@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { BoltIcon, SparkIcon, ClockIcon } from '../components/icons.jsx';
 import Mascot from '../components/Mascot.jsx';
 import { BADGES } from '../lib/storage.js';
@@ -94,66 +94,77 @@ export default function Home({
 
   const hasMemory = lastIngredients?.length > 0 && !memoryShown;
   const showStreak = (stats?.streak || 0) >= 1;
-  const showBadges = (earnedBadges?.length || 0) > 0;
 
   return (
-    <div className="flex-1 overflow-y-auto no-scrollbar bg-brand-cream">
+    <div className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-5 pt-12 pb-2 flex items-center gap-3">
         <Logo />
         <div className="flex-1">
-          <div className="font-extrabold text-brand-green leading-tight text-lg">
+          <div className="font-extrabold text-brand-green leading-tight text-[17px] tracking-tight">
             Little Helpers
           </div>
-          <div className="text-xs text-brand-green/70">Simple meals. Happy families.</div>
+          <div className="text-[11px] text-brand-green/70">Simple meals. Happy families.</div>
         </div>
-        {showBadges && (
+        {(earnedBadges?.length || 0) > 0 && (
           <button
             onClick={() => setBadgesOpen(true)}
-            className="text-xs bg-white rounded-full px-2.5 py-1 border border-black/5 font-semibold text-brand-green flex items-center gap-1"
+            className="text-xs bg-white rounded-full px-3 py-1.5 font-semibold text-brand-green shadow-soft flex items-center gap-1"
           >
             🏆 {earnedBadges.length}
           </button>
         )}
       </div>
 
-      <div className="px-5 pt-4">
-        <div className="bg-white rounded-3xl p-4 border border-black/5 flex items-center gap-3">
-          <div className="flex-1">
-            <div className="text-2xl font-extrabold text-brand-green leading-tight">
-              Hi {profile?.parentName || profile?.name || 'there'}! 👋
+      <div className="px-5 pt-3">
+        <div
+          className="rounded-3xl p-5 flex items-center gap-3 relative overflow-hidden"
+          style={{
+            background:
+              'linear-gradient(135deg, #FFFFFF 0%, #F8F4EB 60%, #EFE6D2 100%)',
+            boxShadow:
+              '0 1px 2px rgba(45,80,22,0.04), 0 10px 30px rgba(45,80,22,0.08)',
+          }}
+        >
+          <div className="flex-1 relative z-10">
+            <div className="text-2xl font-extrabold text-brand-green leading-tight tracking-tight">
+              Hi {profile?.parentName || profile?.name || 'there'}!
             </div>
-            <div className="text-sm text-black/70 mt-1 leading-snug">
+            <div className="text-[13px] text-black/65 mt-1 leading-snug">
               Let's turn what you have into something delicious.
             </div>
             {(showStreak || stats?.totalCooked > 0) && (
-              <div className="mt-2 flex items-center gap-2 flex-wrap">
+              <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
                 {showStreak && (
-                  <span className="text-[11px] bg-brand-orange/10 text-brand-orange font-semibold rounded-full px-2 py-0.5">
+                  <span className="text-[11px] bg-brand-orange/10 text-brand-orange font-semibold rounded-full px-2.5 py-1">
                     🔥 {stats.streak}-day streak
                   </span>
                 )}
                 {stats?.totalCooked > 0 && (
-                  <span className="text-[11px] bg-brand-green/10 text-brand-green font-semibold rounded-full px-2 py-0.5">
+                  <span className="text-[11px] bg-brand-green/10 text-brand-green font-semibold rounded-full px-2.5 py-1">
                     {stats.totalCooked} cooked
                   </span>
                 )}
               </div>
             )}
           </div>
-          <Mascot size={84} />
+          <Mascot size={88} />
+          <div
+            className="absolute -bottom-12 -right-12 w-40 h-40 rounded-full opacity-40"
+            style={{ background: 'radial-gradient(circle, #E8610A33 0%, transparent 70%)' }}
+          />
         </div>
       </div>
 
       {(dailySuggestion || dailySuggestionLoading) && (
-        <div className="px-5 mt-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-semibold text-brand-green">
-              Today's suggestion 🍽️
+        <div className="px-5 mt-4">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-brand-green/70">
+              Today's suggestion
             </div>
             <button
               onClick={onRefreshSuggestion}
               disabled={dailySuggestionLoading}
-              className="text-xs text-brand-orange font-semibold disabled:opacity-50"
+              className="text-[11px] text-brand-orange font-bold disabled:opacity-50 px-2 py-0.5 rounded-full hover:bg-brand-orange/10"
             >
               {dailySuggestionLoading ? '…' : '↻ New'}
             </button>
@@ -161,14 +172,14 @@ export default function Home({
           {dailySuggestion ? (
             <button
               onClick={() => onOpenSuggestion(dailySuggestion)}
-              className="w-full bg-white rounded-2xl border border-black/5 overflow-hidden flex items-center text-left active:scale-[0.99]"
+              className="w-full bg-white rounded-2xl overflow-hidden flex items-center text-left active:scale-[0.99] shadow-soft"
             >
               <SuggestionThumb recipe={dailySuggestion} />
               <div className="flex-1 px-3 py-2.5">
-                <div className="font-semibold text-brand-green text-sm leading-tight line-clamp-2">
+                <div className="font-bold text-brand-green text-sm leading-tight line-clamp-2">
                   {dailySuggestion.title}
                 </div>
-                <div className="text-[11px] text-black/60 mt-0.5 line-clamp-1">
+                <div className="text-[11px] text-black/55 mt-0.5 line-clamp-1">
                   {dailySuggestion.description}
                 </div>
                 <div className="text-[11px] text-black/55 mt-1 flex items-center gap-1">
@@ -177,17 +188,15 @@ export default function Home({
               </div>
             </button>
           ) : (
-            <div className="bg-white/60 rounded-2xl border border-dashed border-black/10 p-3 text-sm text-black/55 flex items-center gap-2">
+            <div className="bg-white rounded-2xl p-3 text-sm text-black/55 flex items-center gap-2 shadow-soft">
               <span className="animate-pulse">🍳</span> Picking something nice for you…
             </div>
           )}
         </div>
       )}
 
-      <div className="px-5 mt-4">
-        <div className="text-sm font-semibold text-brand-green mb-2">
-          How much time do you have?
-        </div>
+      <div className="px-5 mt-5">
+        <SectionLabel>How much time do you have?</SectionLabel>
         <div className="grid grid-cols-4 gap-2">
           {TIMES.map((t) => (
             <Chip key={t.id} on={time === t.id} onClick={() => setTime(t.id)}>
@@ -198,9 +207,7 @@ export default function Home({
       </div>
 
       <div className="px-5 mt-3">
-        <div className="text-sm font-semibold text-brand-green mb-2">
-          How's your energy today?
-        </div>
+        <SectionLabel>How's your energy today?</SectionLabel>
         <div className="grid grid-cols-3 gap-2">
           {ENERGY.map((e) => (
             <Chip key={e.id} on={energy === e.id} onClick={() => setEnergy(e.id)}>
@@ -212,26 +219,33 @@ export default function Home({
       </div>
 
       <div className="px-5 mt-4">
-        <div className="text-sm font-semibold text-brand-green mb-2">What's in your fridge?</div>
+        <SectionLabel>What's in your fridge?</SectionLabel>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Add ingredients..."
-          className="w-full bg-white rounded-2xl px-4 py-3 text-base outline-none border border-black/5 focus:border-brand-green/50"
+          placeholder="e.g. chicken, broccoli, pasta…"
+          className="w-full bg-white rounded-2xl px-4 py-3.5 text-base outline-none shadow-soft focus:ring-2 focus:ring-brand-green/20 transition-all"
         />
         {hasMemory && (
           <button
             onClick={reuseLast}
-            className="mt-2 w-full text-xs bg-brand-green/10 text-brand-green rounded-xl px-3 py-2 font-medium text-left"
+            className="mt-2 w-full text-xs bg-brand-green/8 text-brand-green rounded-2xl px-3 py-2.5 font-medium text-left flex items-center gap-2"
           >
-            🧠 Still have these from last time? {lastIngredients.slice(0, 4).join(', ')}
-            {lastIngredients.length > 4 ? '…' : ''} — tap to add
+            <span className="text-base">🧠</span>
+            <span className="flex-1">
+              Still have these from last time?{' '}
+              <span className="text-brand-green/80">
+                {lastIngredients.slice(0, 4).join(', ')}
+                {lastIngredients.length > 4 ? '…' : ''}
+              </span>
+            </span>
+            <span className="text-brand-green font-bold">+ Add</span>
           </button>
         )}
       </div>
 
       <div className="px-5 mt-4">
-        <div className="text-sm font-semibold text-brand-green mb-2">Popular ingredients</div>
+        <SectionLabel>Popular ingredients</SectionLabel>
         <div className="grid grid-cols-2 gap-2">
           {POPULAR.map(({ name, dot }) => {
             const on = picked.includes(name);
@@ -239,14 +253,14 @@ export default function Home({
               <button
                 key={name}
                 onClick={() => togglePick(name)}
-                className={`flex items-center gap-2.5 rounded-full pl-2 pr-3 py-2 text-sm border transition-colors ${
+                className={`flex items-center gap-2.5 rounded-full pl-2 pr-3 py-2 text-sm border transition-all active:scale-[0.97] ${
                   on
-                    ? 'bg-brand-green text-white border-brand-green'
-                    : 'bg-white text-brand-green border-black/5'
+                    ? 'bg-brand-green text-white border-brand-green shadow-pop'
+                    : 'bg-white text-brand-green border-transparent shadow-soft'
                 }`}
               >
                 <span
-                  className="w-6 h-6 rounded-full shrink-0 border border-black/5"
+                  className="w-6 h-6 rounded-full shrink-0 ring-1 ring-black/5"
                   style={{ background: on ? '#fff' : dot, opacity: on ? 0.85 : 1 }}
                 />
                 <span className="font-semibold">{name}</span>
@@ -260,28 +274,29 @@ export default function Home({
         <button
           disabled={busy}
           onClick={find}
-          className="w-full rounded-2xl bg-brand-green text-white font-semibold py-3.5 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99]"
+          className="btn-primary w-full rounded-2xl text-white font-bold py-4 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99] transition-all"
         >
           <SparkIcon size={18} stroke="#fff" />{' '}
-          {busy ? 'Cooking up ideas...' : 'Find Recipe'}
+          {busy ? 'Cooking up ideas…' : 'Find Recipe'}
         </button>
         <button
           disabled={busy}
           onClick={() => setRescueOpen(true)}
-          className="w-full rounded-2xl bg-brand-orange text-white font-semibold py-3.5 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99]"
+          className="btn-orange w-full rounded-2xl text-white font-bold py-4 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99] transition-all"
         >
           <BoltIcon size={18} /> 🆘 Rescue Mode
         </button>
         <button
           disabled={busy}
           onClick={() => setCloneOpen(true)}
-          className="w-full rounded-2xl bg-white text-brand-green font-semibold py-3 border border-black/10 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99]"
+          className="w-full rounded-2xl bg-white text-brand-green font-semibold py-3 shadow-soft flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99]"
         >
-          🍟 Healthy Clone — make a homemade version
+          🍟 Healthy Clone
+          <span className="text-[11px] text-black/45 font-medium">— make a homemade version</span>
         </button>
       </div>
 
-      <div className="h-6" />
+      <div className="h-24" />
 
       {rescueOpen && (
         <RescueSheet onClose={() => setRescueOpen(false)} onPick={triggerRescue} />
@@ -300,14 +315,22 @@ export default function Home({
   );
 }
 
+function SectionLabel({ children }) {
+  return (
+    <div className="text-[11px] font-bold uppercase tracking-wider text-brand-green/70 mb-2 px-1">
+      {children}
+    </div>
+  );
+}
+
 function Chip({ on, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-full px-3 py-2 text-sm font-medium border transition-colors ${
+      className={`rounded-full px-3 py-2 text-sm font-semibold transition-all active:scale-[0.97] ${
         on
-          ? 'bg-brand-green text-white border-brand-green'
-          : 'bg-white text-brand-green border-black/5'
+          ? 'bg-brand-green text-white shadow-pop'
+          : 'bg-white text-brand-green shadow-soft'
       }`}
     >
       {children}
@@ -323,11 +346,11 @@ function RescueSheet({ onClose, onPick }) {
           <button
             key={r.id}
             onClick={() => onPick(r.id)}
-            className="w-full bg-brand-cream rounded-2xl p-3 text-left flex items-center gap-3 active:scale-[0.99] border border-black/5"
+            className="w-full bg-brand-cream rounded-2xl p-3.5 text-left flex items-center gap-3 active:scale-[0.99] shadow-soft"
           >
             <div className="text-2xl">{r.emoji}</div>
             <div className="flex-1">
-              <div className="font-semibold text-brand-green">{r.title}</div>
+              <div className="font-bold text-brand-green">{r.title}</div>
               <div className="text-xs text-black/60">{r.sub}</div>
             </div>
           </button>
@@ -353,19 +376,19 @@ function CloneSheet({ onClose, onSubmit }) {
         value={val}
         onChange={(e) => setVal(e.target.value)}
         placeholder="e.g. McNuggets, Big Mac, frozen pizza"
-        className="w-full bg-brand-cream rounded-2xl px-4 py-3 text-base outline-none border border-black/5 focus:border-brand-green/50"
+        className="w-full bg-brand-cream rounded-2xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-brand-green/20"
       />
       <div className="flex gap-2 mt-3">
         <button
           onClick={onClose}
-          className="flex-1 rounded-2xl bg-white text-brand-green font-semibold py-3 border border-black/10"
+          className="flex-1 rounded-2xl bg-white text-brand-green font-semibold py-3 shadow-soft"
         >
           Cancel
         </button>
         <button
           disabled={!val.trim()}
           onClick={() => onSubmit(val)}
-          className="flex-1 rounded-2xl bg-brand-orange text-white font-semibold py-3 disabled:opacity-50"
+          className="btn-orange flex-1 rounded-2xl text-white font-bold py-3 disabled:opacity-50"
         >
           Make it
         </button>
@@ -387,18 +410,16 @@ function BadgesSheet({ onClose, earned, stats }) {
           return (
             <div
               key={b.id}
-              className={`rounded-2xl p-3 flex items-center gap-3 border ${
-                has
-                  ? 'bg-brand-cream border-brand-green/30'
-                  : 'bg-white border-black/5 opacity-60'
+              className={`rounded-2xl p-3 flex items-center gap-3 ${
+                has ? 'bg-brand-cream shadow-soft' : 'bg-white/60 opacity-60'
               }`}
             >
               <div className={`text-2xl ${has ? '' : 'grayscale'}`}>{b.emoji}</div>
               <div className="flex-1">
-                <div className="font-semibold text-brand-green text-sm">{b.name}</div>
+                <div className="font-bold text-brand-green text-sm">{b.name}</div>
                 <div className="text-xs text-black/60">{b.desc}</div>
               </div>
-              {has && <div className="text-xs font-semibold text-brand-green">✓</div>}
+              {has && <div className="text-xs font-bold text-brand-green">✓</div>}
             </div>
           );
         })}
@@ -417,11 +438,11 @@ function BadgesSheet({ onClose, earned, stats }) {
 
 function Sheet({ onClose, title, subtitle, children }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+    <div className="fixed inset-0 z-40 flex items-end justify-center animate-fade-in-up">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div
         className="relative bg-white w-full max-w-[390px] rounded-t-3xl p-5 pb-7 z-50"
-        style={{ boxShadow: '0 -10px 30px rgba(0,0,0,0.15)' }}
+        style={{ boxShadow: '0 -10px 40px rgba(0,0,0,0.15)' }}
       >
         <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mb-4" />
         <div className="text-lg font-extrabold text-brand-green text-center">{title}</div>
@@ -439,7 +460,7 @@ function SuggestionThumb({ recipe }) {
   const src = imageUrlFor(recipe.imageQuery || recipe.title, hash(recipe.id));
   if (err) {
     return (
-      <div className="w-20 h-20 shrink-0 bg-[#fde7c8] flex items-center justify-center text-2xl">
+      <div className="w-20 h-20 shrink-0 bg-gradient-to-br from-[#fde7c8] to-[#e9bb7a] flex items-center justify-center text-2xl">
         🍽️
       </div>
     );
@@ -462,7 +483,13 @@ function hash(s = '') {
 
 function Logo() {
   return (
-    <div className="w-10 h-10 rounded-full bg-brand-green flex items-center justify-center">
+    <div
+      className="w-10 h-10 rounded-2xl flex items-center justify-center"
+      style={{
+        background: 'linear-gradient(135deg, #3F7220 0%, #2D5016 100%)',
+        boxShadow: '0 4px 12px rgba(45,80,22,0.25)',
+      }}
+    >
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#F5F0E8" strokeWidth="2">
         <path d="M6 14a4 4 0 1 1 1.5-7.7A4 4 0 0 1 12 4a4 4 0 0 1 4.5 2.3A4 4 0 1 1 18 14" />
         <path d="M6 14v5a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-5" />

@@ -10,8 +10,12 @@ function getClient() {
 }
 
 export function imageUrlFor(query, seed = 1) {
-  const q = encodeURIComponent((query || 'food').trim().replace(/\s+/g, ','));
-  return `https://loremflickr.com/640/420/${q},food?lock=${seed}`;
+  const cleaned = (query || 'food').trim().replace(/\s+/g, ' ');
+  const prompt = `professional food photography of ${cleaned}, plated, top-down view, soft natural lighting, appetising, restaurant quality, no text`;
+  const safeSeed = Math.abs(Number(seed) || 1) % 999983;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(
+    prompt
+  )}?width=640&height=420&seed=${safeSeed}&nologo=true`;
 }
 
 const RESCUE_LIMITS = {
