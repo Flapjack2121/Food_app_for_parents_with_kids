@@ -7,6 +7,7 @@ import Recipe from './screens/Recipe.jsx';
 import ShoppingList from './screens/ShoppingList.jsx';
 import Favorites from './screens/Favorites.jsx';
 import Plan from './screens/Plan.jsx';
+import Profile from './screens/Profile.jsx';
 import CookMode from './screens/CookMode.jsx';
 import { storage, BADGES } from './lib/storage.js';
 import { generateRecipes, adjustRecipe, cloneDish } from './api/claude.js';
@@ -17,6 +18,8 @@ export default function App() {
   const [profile, setProfile] = useState(() => storage.getProfile());
   const [tab, setTab] = useState('home');
   const [recipe, setRecipe] = useState(null);
+  const [recipeBatch, setRecipeBatch] = useState([]);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [recipeQueue, setRecipeQueue] = useState([]);
   const [lastRequest, setLastRequest] = useState(null);
   const [seenTitles, setSeenTitles] = useState([]);
@@ -88,6 +91,9 @@ export default function App() {
         storage.setLastIngredients(ingredients);
         setLastIngredients(ingredients);
       }
+      if (context?.mode && context.mode !== 'normal') {
+        storage.incrementRescue();
+      }
       const list = await generateRecipes({
         ingredients,
         profile,
@@ -100,12 +106,22 @@ export default function App() {
         count: 3,
       });
       if (!list.length) throw new Error('No recipes returned');
-      const [first, ...rest] = list;
-      setRecipe(first);
-      setRecipeQueue(rest);
+      setRecipeBatch(list);
+      setActiveIndex(0);
+      setRecipe(list[0]);
+      setRecipeQueue([]);
       setLastRequest({ ingredients, context });
       setSeenTitles((prev) => [...prev, ...list.map((r) => r.title)]);
       setTab('recipe');
+      const used = ingredients.length;
+      const have = list[0]?.ingredients?.filter((i) => i.haveIt).length || 0;
+      if (used >= 3 && have >= used) {
+        storage.incrementNoWaste();
+      }
+      const fresh = storage.refreshBadges();
+      setStats(fresh.stats);
+      setEarnedBadges(fresh.earned);
+      if (fresh.newly.length > 0) showBadgeToast(fresh.newly[0]);
     } catch (e) {
       console.error(e);
       setError(e.message || 'Something went wrong.');
@@ -114,15 +130,41 @@ export default function App() {
     }
   };
 
+  const showBadgeToast = (id) => {
+    const b = BADGES.find((x) => x.id === id);
+    if (!b) return;
+    setBadgeToast(b);
+    try {
+      import('canvas-confetti').then((mod) => {
+        const fire = mod.default || mod;
+        fire({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      });
+    } catch {}
+    setTimeout(() => setBadgeToast(null), 4000);
+  };
+
   const nextIdea = async () => {
-    if (recipeQueue.length > 0) {
-      const [next, ...rest] = recipeQueue;
-      setRecipe(next);
-      setRecipeQueue(rest);
+    if (recipeBatch.length > 0 && activeIndex < recipeBatch.length - 1) {
+      const next = activeIndex + 1;
+      setActiveIndex(next);
+      setRecipe(recipeBatch[next]);
       return;
     }
     const req = lastRequest || { ingredients: [], context: { mode: 'normal' } };
     await fetchAndShow(req);
+  };
+
+  const prevIdea = () => {
+    if (recipeBatch.length > 0 && activeIndex > 0) {
+      const prev = activeIndex - 1;
+      setActiveIndex(prev);
+      setRecipe(recipeBatch[prev]);
+    }
+  };
+
+  const swipeRecipe = (dir) => {
+    if (dir === 'next') nextIdea();
+    else if (dir === 'prev') prevIdea();
   };
 
   const handleAdjust = async (problem) => {
@@ -185,13 +227,7 @@ export default function App() {
       const { earned, newly, stats: nextStats } = storage.refreshBadges();
       setStats(nextStats);
       setEarnedBadges(earned);
-      if (newly.length > 0) {
-        const b = BADGES.find((x) => x.id === newly[0]);
-        if (b) {
-          setBadgeToast(b);
-          setTimeout(() => setBadgeToast(null), 4000);
-        }
-      }
+      if (newly.length > 0) showBadgeToast(newly[0]);
     }
     setCookOpen(false);
   };
@@ -226,13 +262,7 @@ export default function App() {
       storage.markWeekPlanCompleted();
       const { earned, newly } = storage.refreshBadges();
       setEarnedBadges(earned);
-      if (newly.length > 0) {
-        const b = BADGES.find((x) => x.id === newly[0]);
-        if (b) {
-          setBadgeToast(b);
-          setTimeout(() => setBadgeToast(null), 4000);
-        }
-      }
+      if (newly.length > 0) showBadgeToast(newly[0]);
     }
     setTab('list');
   };
@@ -282,8 +312,12 @@ export default function App() {
         {tab === 'recipe' && (
           <Recipe
             recipe={recipe}
+            recipes={recipeBatch}
+            activeIndex={activeIndex}
+            onSwipe={swipeRecipe}
             onCook={startCooking}
             onNext={nextIdea}
+            onPrev={prevIdea}
             onBack={() => setTab('home')}
             onAdjust={handleAdjust}
             busy={busy}
@@ -291,7 +325,13 @@ export default function App() {
           />
         )}
 
-        {tab === 'list' && <ShoppingList list={shoppingList} onChange={setShoppingList} />}
+        {tab === 'list' && (
+          <ShoppingList
+            list={shoppingList}
+            onChange={setShoppingList}
+            onNavigate={setTab}
+          />
+        )}
 
         {tab === 'favorites' && (
           <Favorites
@@ -304,10 +344,41 @@ export default function App() {
           />
         )}
 
+        {tab === 'profile' && (
+          <Profile
+            profile={profile}
+            stats={stats}
+            earnedBadges={earnedBadges}
+            favorites={favorites}
+            onEditProfile={() => setProfile(null)}
+            onOpenRecipe={(r) => {
+              setRecipe(r);
+              setRecipeBatch([]);
+              setActiveIndex(0);
+              setTab('recipe');
+            }}
+            onResetAll={() => {
+              setProfile(null);
+              setFavorites([]);
+              setShoppingList(null);
+              setLastIngredients([]);
+              setStats(storage.getStats());
+              setEarnedBadges([]);
+              setDailySuggestion(null);
+              setTab('home');
+            }}
+          />
+        )}
+
         <BottomNav
           active={tab === 'recipe' ? 'home' : tab}
           onChange={(next) => {
             if (next === 'favorites') setFavorites(storage.getFavorites());
+            if (next === 'profile') {
+              setStats(storage.getStats());
+              setEarnedBadges(storage.getBadges());
+              setFavorites(storage.getFavorites());
+            }
             setTab(next);
           }}
         />
