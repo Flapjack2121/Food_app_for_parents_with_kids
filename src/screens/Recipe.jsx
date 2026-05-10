@@ -11,10 +11,10 @@ import { storage } from '../lib/storage.js';
 import { imageUrlFor } from '../api/claude.js';
 
 const COMPLAINTS = [
-  { id: 'spicy', label: 'Too spicy' },
-  { id: 'texture', label: 'Wrong texture' },
-  { id: 'ingredient', label: 'Hates an ingredient' },
-  { id: 'looks', label: 'Looks weird' },
+  { id: 'texture', label: 'Texture is wrong (mushy/crunchy/weird)' },
+  { id: 'green', label: 'Suspicious ingredients (anything green)' },
+  { id: 'looks', label: "Looks different from yesterday's version" },
+  { id: 'classic', label: 'No reason. Just no. (classic toddler)' },
 ];
 
 export default function Recipe({
@@ -184,7 +184,7 @@ export default function Recipe({
               style={{ background: 'rgba(45, 80, 22, 0.95)' }}
             >
               <SmileIcon size={12} stroke="#fff" sw={2.5} />
-              Kid-friendly
+              Worth trying 🤞
             </div>
           )}
 
@@ -198,11 +198,18 @@ export default function Recipe({
 
       <div className="px-5 mt-4">
         <div className="text-sm text-black/70 leading-snug">{recipe.description}</div>
-        {recipe.kidFriendlyReason && (
-          <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-brand-green bg-brand-green/8 rounded-full px-2.5 py-1 font-semibold">
-            ✓ {recipe.kidFriendlyReason}
-          </div>
-        )}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {recipe.pickyEaterScore != null && (
+            <div className="inline-flex items-center gap-1.5 text-[11px] text-brand-green bg-brand-green/10 rounded-full px-2.5 py-1 font-bold">
+              {recipe.pickyEaterScore}% of picky eaters eat this
+            </div>
+          )}
+          {recipe.kidFriendlyReason && (
+            <div className="inline-flex items-center gap-1.5 text-[11px] text-brand-green/80 bg-brand-green/8 rounded-full px-2.5 py-1 font-semibold">
+              ✓ {recipe.kidFriendlyReason}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="px-5 mt-4">
@@ -303,10 +310,10 @@ export default function Recipe({
           className="w-full rounded-2xl bg-white text-brand-orange font-semibold py-3.5 shadow-soft border-2 border-brand-orange/20 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99]"
         >
           {busy ? (
-            'Finding next idea…'
+            'Searching…'
           ) : (
             <>
-              Next Idea <ArrowRight size={18} stroke="#E8610A" />
+              Show me another option <ArrowRight size={18} stroke="#E8610A" />
             </>
           )}
         </button>
@@ -315,7 +322,7 @@ export default function Recipe({
           onClick={() => setComplaintOpen(true)}
           className="w-full rounded-2xl bg-white text-black/65 font-medium py-2.5 text-sm shadow-soft disabled:opacity-60"
         >
-          {adjusting ? 'Tweaking the recipe…' : "🙅 My kid won't eat this"}
+          {adjusting ? 'Tweaking the recipe…' : '🧒 Already know they’ll refuse this'}
         </button>
       </div>
 
@@ -338,17 +345,17 @@ function ComplaintSheet({ onClose, onPick }) {
       >
         <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mb-4" />
         <div className="text-lg font-extrabold text-brand-green text-center">
-          What's the problem?
+          What are we dealing with? 😅
         </div>
         <div className="text-xs text-black/60 text-center mb-3">
-          We'll tweak the recipe right away.
+          We'll find something with better odds.
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {COMPLAINTS.map((c) => (
             <button
               key={c.id}
               onClick={() => onPick(c.label)}
-              className="bg-brand-cream rounded-2xl p-3.5 text-sm font-bold text-brand-green shadow-soft active:scale-[0.99]"
+              className="bg-brand-cream rounded-2xl px-3 py-3 text-sm font-bold text-brand-green shadow-soft active:scale-[0.99] text-left"
             >
               {c.label}
             </button>
