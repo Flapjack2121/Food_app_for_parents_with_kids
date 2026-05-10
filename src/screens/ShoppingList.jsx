@@ -47,7 +47,15 @@ export default function ShoppingList({ list, onChange, onNavigate }) {
 
   const shareList = async () => {
     const ratio = servings / baseServings;
-    const lines = [`Shopping List${list?.recipeTitle ? ` — ${list.recipeTitle}` : ''}`, ''];
+    const lines = [
+      'Shopping list from Little Helpers:',
+      '(because meal planning is a team sport)',
+      '',
+    ];
+    if (list?.recipeTitle) {
+      lines.push(`— ${list.recipeTitle}`);
+      lines.push('');
+    }
     CATEGORIES.forEach((c) => {
       const rows = grouped[c.id];
       if (rows.length === 0) return;
@@ -81,7 +89,7 @@ export default function ShoppingList({ list, onChange, onNavigate }) {
       <div className="px-5 pt-12 pb-2 flex items-center">
         <div>
           <div className="text-2xl font-extrabold text-brand-green tracking-tight">
-            Shopping List
+            What to Buy
           </div>
           <div className="text-[11px] text-brand-green/60 font-medium">
             {items.length} {items.length === 1 ? 'item' : 'items'} · {checkedCount} checked
@@ -90,9 +98,9 @@ export default function ShoppingList({ list, onChange, onNavigate }) {
         <button
           onClick={shareList}
           disabled={items.length === 0}
-          className="ml-auto btn-orange text-sm font-bold text-white px-4 py-2 rounded-full disabled:opacity-40"
+          className="ml-auto btn-orange text-sm font-bold text-white px-3.5 py-2 rounded-full disabled:opacity-40"
         >
-          Share
+          Send to partner 📤
         </button>
       </div>
 
@@ -101,9 +109,10 @@ export default function ShoppingList({ list, onChange, onNavigate }) {
           <div className="text-[64px] leading-none mb-4 select-none" aria-hidden>
             🛒
           </div>
-          <div className="text-xl font-extrabold text-brand-green">Your list is empty</div>
+          <div className="text-xl font-extrabold text-brand-green">Nothing here yet</div>
           <div className="text-sm text-black/60 mt-2 max-w-[280px] mx-auto leading-snug">
-            Cook a recipe or plan your week to build your shopping list automatically
+            Cook a recipe or plan your week and we'll build this automatically. No more mental
+            load at the supermarket.
           </div>
           <div className="mt-6 space-y-2.5 max-w-[280px] mx-auto">
             <button

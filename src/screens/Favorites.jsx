@@ -8,7 +8,7 @@ export default function Favorites({ favorites, onOpen }) {
       <div className="px-5 pt-12 pb-2 flex items-center gap-2">
         <div>
           <div className="text-2xl font-extrabold text-brand-green tracking-tight flex items-center gap-2">
-            Favorites
+            What Actually Worked
             <HeartIcon size={20} stroke="#E8610A" filled />
           </div>
           <div className="text-[11px] text-brand-green/60 font-medium">
@@ -19,9 +19,12 @@ export default function Favorites({ favorites, onOpen }) {
 
       {favorites.length === 0 ? (
         <div className="px-5 mt-12 text-center text-black/60">
-          <div className="text-4xl mb-2">💚</div>
-          <div className="font-bold text-brand-green">No favorites yet.</div>
-          <div className="text-sm mt-1">Tap the heart on a recipe to save it here.</div>
+          <div className="text-4xl mb-2">❤️</div>
+          <div className="font-bold text-brand-green">Nothing saved yet</div>
+          <div className="text-sm mt-1 max-w-[280px] mx-auto leading-snug">
+            When you find a recipe they actually eat, tap the heart. You'll want to find it
+            again. Trust us.
+          </div>
         </div>
       ) : (
         <div className="px-5 mt-3 grid grid-cols-2 gap-3 pb-24">
