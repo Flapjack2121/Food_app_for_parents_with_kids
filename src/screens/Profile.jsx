@@ -13,6 +13,7 @@ export default function Profile({
   onResetAll,
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
+  const [tappedBadge, setTappedBadge] = useState(null);
   const ratings = storage.getRatings();
   const lovedTitles = ratings.filter((r) => r.rating === 'loved').slice(0, 3);
   const lovedRecipes = lovedTitles
@@ -28,8 +29,12 @@ export default function Profile({
   return (
     <div className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-5 pt-12 pb-2">
-        <div className="text-2xl font-extrabold text-brand-green tracking-tight">Profile</div>
-        <div className="text-[11px] text-brand-green/60 font-medium">Your family kitchen</div>
+        <div className="text-2xl font-extrabold text-brand-green tracking-tight">
+          Your Kitchen 👨‍🍳
+        </div>
+        <div className="text-[11px] text-brand-green/60 font-medium">
+          {profile?.parentName || 'Friend'}'s corner
+        </div>
       </div>
 
       <div className="px-5 mt-3">
@@ -73,31 +78,33 @@ export default function Profile({
       </div>
 
       <div className="px-5 mt-4">
-        <SectionLabel>Stats</SectionLabel>
+        <SectionLabel>Your wins so far</SectionLabel>
         <div className="grid grid-cols-2 gap-2">
-          <StatCard emoji="🍳" label="Recipes cooked" value={stats?.totalCooked || 0} />
+          <StatCard emoji="🍳" label="Dinners survived" value={stats?.totalCooked || 0} />
           <StatCard emoji="🔥" label="Day streak" value={stats?.streak || 0} />
           <StatCard
             emoji="📅"
             label="Weeks planned"
             value={stats?.weekPlanCompleted ? 1 : 0}
           />
-          <StatCard emoji="❤️" label="Favorites" value={favorites?.length || 0} />
+          <StatCard emoji="❤️" label="Recipes saved" value={favorites?.length || 0} />
         </div>
       </div>
 
       <div className="px-5 mt-4">
         <SectionLabel>
-          Badges · {earnedBadges?.length || 0} of {BADGES.length}
+          Earned the hard way 🏆 · {earnedBadges?.length || 0} of {BADGES.length}
         </SectionLabel>
         <div className="grid grid-cols-2 gap-2">
           {BADGES.map((b) => {
             const has = (earnedBadges || []).includes(b.id);
             const date = unlocks?.[b.id];
+            const tipShown = tappedBadge === b.id;
             return (
-              <div
+              <button
                 key={b.id}
-                className={`rounded-2xl p-3 text-center shadow-soft transition-all ${
+                onClick={() => setTappedBadge((cur) => (cur === b.id ? null : b.id))}
+                className={`rounded-2xl p-3 text-center shadow-soft transition-all active:scale-[0.99] ${
                   has ? 'bg-white' : 'bg-white/60'
                 }`}
               >
@@ -116,13 +123,15 @@ export default function Profile({
                 >
                   {b.name}
                 </div>
-                <div className="text-[10px] text-black/45 mt-0.5 leading-tight">{b.desc}</div>
-                {has && date && (
+                <div className="text-[10px] text-black/45 mt-0.5 leading-tight">
+                  {tipShown ? (has ? b.unlock : b.requirement) : b.desc}
+                </div>
+                {has && date && !tipShown && (
                   <div className="text-[10px] text-brand-orange font-semibold mt-1">
                     Unlocked {date}
                   </div>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
@@ -148,29 +157,27 @@ export default function Profile({
             onClick={() => setConfirmReset(true)}
             className="w-full text-xs text-black/45 font-medium py-3 rounded-xl bg-white/40"
           >
-            Reset all app data
+            Start fresh (clear everything)
           </button>
         ) : (
           <div className="bg-white rounded-2xl p-4 shadow-soft">
-            <div className="text-sm font-bold text-brand-green">
-              Erase everything?
-            </div>
-            <div className="text-xs text-black/60 mt-1">
-              This clears your profile, favorites, plan, ratings, and badges. You'll go back
-              to onboarding.
+            <div className="text-sm font-bold text-brand-green">Are you sure?</div>
+            <div className="text-xs text-black/60 mt-1 leading-snug">
+              This will delete your family profile, saved recipes, and streak. It cannot be
+              undone.
             </div>
             <div className="flex gap-2 mt-3">
               <button
                 onClick={() => setConfirmReset(false)}
                 className="flex-1 rounded-xl bg-brand-cream text-brand-green font-semibold py-2.5 text-sm"
               >
-                Cancel
+                No, keep my data
               </button>
               <button
                 onClick={reset}
                 className="flex-1 rounded-xl bg-red-600 text-white font-bold py-2.5 text-sm"
               >
-                Erase all
+                Yes, start fresh
               </button>
             </div>
           </div>
