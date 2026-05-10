@@ -1,10 +1,11 @@
-import { HomeIcon, ChefIcon, BasketIcon, HeartIcon } from './icons.jsx';
+import { HomeIcon, ChefIcon, BasketIcon, HeartIcon, PersonIcon } from './icons.jsx';
 
 const tabs = [
   { id: 'home', label: 'Home', Icon: HomeIcon },
   { id: 'plan', label: 'Plan', Icon: ChefIcon },
   { id: 'list', label: 'List', Icon: BasketIcon },
-  { id: 'favorites', label: 'Favorites', Icon: HeartIcon },
+  { id: 'favorites', label: 'Saved', Icon: HeartIcon },
+  { id: 'profile', label: 'Profile', Icon: PersonIcon },
 ];
 
 export default function BottomNav({ active, onChange }) {
@@ -41,7 +42,7 @@ export default function BottomNav({ active, onChange }) {
               )}
               <span className="relative flex items-center justify-center mt-0.5">
                 <Icon
-                  size={22}
+                  size={20}
                   stroke={isActive ? '#2D5016' : '#94978f'}
                   fill={isActive && id === 'favorites' ? '#2D5016' : 'none'}
                 />
