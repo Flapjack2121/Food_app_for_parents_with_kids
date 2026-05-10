@@ -79,6 +79,12 @@ export default function CookMode({ recipe, onClose, onFinish }) {
 
   const totalSecs = step.timerSeconds || 0;
   const progress = totalSecs > 0 ? 1 - secsLeft / totalSecs : 0;
+  const timerColor =
+    totalSecs > 0 && secsLeft <= 10 && secsLeft > 0
+      ? '#D8412B'
+      : totalSecs > 0 && secsLeft / totalSecs <= 0.5
+        ? '#E8610A'
+        : '#2D5016';
 
   return (
     <div className="fixed inset-0 z-50 bg-brand-cream flex flex-col">
@@ -108,7 +114,10 @@ export default function CookMode({ recipe, onClose, onFinish }) {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-        <div className="text-2xl font-bold text-brand-green leading-snug">
+        <div
+          className="font-bold text-brand-green leading-snug"
+          style={{ fontSize: 22 }}
+        >
           {step.instruction}
         </div>
 
@@ -128,17 +137,20 @@ export default function CookMode({ recipe, onClose, onFinish }) {
                   cx="50"
                   cy="50"
                   r="44"
-                  stroke="#E8610A"
+                  stroke={timerColor}
                   strokeWidth="8"
                   fill="none"
                   strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 44}
                   strokeDashoffset={2 * Math.PI * 44 * progress}
-                  style={{ transition: 'stroke-dashoffset 1s linear' }}
+                  style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.4s ease' }}
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="text-4xl font-extrabold text-brand-green tabular-nums">
+                <div
+                  className="text-4xl font-extrabold tabular-nums transition-colors"
+                  style={{ color: timerColor }}
+                >
                   {fmt(secsLeft)}
                 </div>
                 <div className="text-xs text-black/55 mt-1">

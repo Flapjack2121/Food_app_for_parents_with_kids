@@ -114,7 +114,12 @@ export default function Plan({ profile, onOpenRecipe, onBuildShoppingList }) {
         <button
           disabled={filledCount === 0}
           onClick={() => onBuildShoppingList(plan.filter(Boolean))}
-          className="btn-orange w-full rounded-2xl text-white font-bold py-4 disabled:opacity-50 active:scale-[0.99]"
+          className="w-full rounded-xl text-white font-bold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.99] transition-all"
+          style={{
+            height: 56,
+            background: '#E8610A',
+            boxShadow: '0 6px 16px rgba(232,97,10,0.32)',
+          }}
         >
           🛒 Generate Shopping List
         </button>
