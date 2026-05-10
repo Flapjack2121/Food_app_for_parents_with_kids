@@ -2,33 +2,48 @@
 
 A mobile-first React MVP that helps parents turn what's in the fridge into kid-friendly recipes, powered by the Claude API.
 
-## Stack
+## Deploy to Vercel (from your phone)
 
-- React 18 + Vite
-- Tailwind CSS (palette: dark green `#2D5016`, orange `#E8610A`, cream `#F5F0E8`)
-- `@anthropic-ai/sdk` (`claude-sonnet-4-20250514`)
-- `localStorage` for the family profile, favorites, and the active shopping list
+1. Go to [vercel.com](https://vercel.com) and **Sign up with GitHub** (free).
+2. Tap **Add New… → Project**.
+3. Find **`food_app_for_parents_with_kids`** in the list and tap **Import**.
+4. **Important — change the branch:** under "Git Repository", expand the options and switch the branch from `main` to **`claude/little-helpers-app-gG0Za`**.
+5. (Optional) Open **Environment Variables** and add:
+   - **Name:** `VITE_ANTHROPIC_API_KEY`
+   - **Value:** your key from [console.anthropic.com](https://console.anthropic.com/)
+   Skip this and the app still works with built-in sample recipes.
+6. Tap **Deploy**. After ~1–2 minutes you get a public URL like `little-helpers-xxxx.vercel.app`.
 
-## Setup
+> ⚠️ Anything starting with `VITE_` is **inlined into the JS bundle**, so the key is visible to anyone who looks at your site. For a personal demo that's fine; for a real launch put the key behind a tiny serverless route (e.g. `/api/recipe.js` on Vercel).
+
+Every push to the `claude/little-helpers-app-gG0Za` branch redeploys automatically.
+
+## Run locally
 
 ```bash
 npm install
 cp .env.example .env        # add your Anthropic key
-npm run dev
+npm run dev                 # http://localhost:5173
 ```
 
-Set `VITE_ANTHROPIC_API_KEY` in `.env`. Without a key the app falls back to a built-in mock recipe so you can still click through every screen.
+## Stack
 
-> Browser-side API calls use `dangerouslyAllowBrowser: true`. For anything beyond a local demo, proxy requests through a backend so the key isn't shipped to clients.
+- React 18 + Vite
+- Tailwind CSS (`#2D5016` green, `#E8610A` orange, `#F5F0E8` cream, `Inter` font)
+- `@anthropic-ai/sdk` calling `claude-sonnet-4-20250514` from the browser
+- `localStorage` for the profile, favorites, week plan, shopping list, ratings, cook history, badges, daily suggestion
+- Food photos via `image.pollinations.ai` (no key, deterministic per recipe)
 
 ## Screens
 
-1. **Onboarding** — name, kid count, ages, allergies, picky-eater toggle. Persisted to `lh.profile`.
-2. **Home** — greeting, fridge input, 8 popular-ingredient quick-tags, green **Find Recipe**, orange **Lazy Mode** (≤10 min, ≤4 ingredients).
-3. **Recipe** — image card, prep-time + kid-friendly badges, stat chips, ingredients, steps, **Cook This!** → shopping list, **Next Idea**, heart to save.
-4. **Shopping List** — only the missing items, grouped Vegetables / Dairy / Meat / Other, checkboxes, "X of Y items checked", clear-checked.
-5. **Favorites** — grid of saved recipes; tap to reopen.
+1. **Onboarding** — parent name, kid name + age + picky toggle, 9 allergies/restrictions, cooking skill (Beginner / Comfortable / Confident).
+2. **Home** — greeting card with mascot + streak/badge chips, today's auto-suggested recipe, time + energy chips, fridge input with "still have these from last time?" memory, 8 popular ingredients, **Find Recipe** (green), **🆘 Rescue Mode** (3 levels), **🍟 Healthy Clone** (homemade McNuggets etc.).
+3. **Recipe** — hero photo with overlay, kid-friendly reason chip, calories/protein/carbs row, ingredients with have-it dots, steps with per-step timers, **Cook This!** opens cook-mode, **Next Idea**, **My kid won't eat this** swap, heart to save.
+4. **Cook Mode** — full-screen one-step-at-a-time guide with countdown ring, beep + vibrate alarm, **Done Cooking** asks 👎 / 😐 / 👍 to learn what the family likes.
+5. **Plan** — 7 day cards, **Auto-fill Week** (single batched call), **Generate Shopping List** merges all missing items.
+6. **Shopping List** — Vegetables / Dairy / Meat / Pantry / Frozen sections, servings slider rescales quantities, **Share** button (native share sheet, clipboard fallback).
+7. **Favorites** — saved recipes grid with photos.
 
 ## Layout
 
-Designed for ≤390 px width. The whole app is mounted inside a `PhoneFrame` shell so it looks right on desktop too.
+Mobile-first, max-width 390 px, mounted inside a `PhoneFrame` so it looks right on desktop too.
