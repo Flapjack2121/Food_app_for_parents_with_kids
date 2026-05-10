@@ -14,6 +14,25 @@ import { generateRecipes, adjustRecipe, cloneDish } from './api/claude.js';
 
 const CATEGORIES = ['Vegetables', 'Dairy', 'Meat', 'Pantry', 'Frozen'];
 
+const LOADING_MESSAGES = [
+  'Searching for something they might actually eat… 🤞',
+  'Finding the path of least resistance… 🍝',
+  "Looking for tonight's best option… 👨‍🍳",
+  'Almost there — finding kid-tested options… 🧒',
+];
+
+function pickLoadingMessage() {
+  return LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
+}
+
+function friendlyError(err) {
+  const msg = err?.message || '';
+  if (/network|fetch|offline|connection/i.test(msg)) {
+    return 'No internet? No problem — check your connection and try again.';
+  }
+  return "Hmm, something went wrong on our end. Not your fault — try again?";
+}
+
 export default function App() {
   const [profile, setProfile] = useState(() => storage.getProfile());
   const [tab, setTab] = useState('home');
@@ -24,6 +43,7 @@ export default function App() {
   const [lastRequest, setLastRequest] = useState(null);
   const [seenTitles, setSeenTitles] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [busyMessage, setBusyMessage] = useState('');
   const [adjusting, setAdjusting] = useState(false);
   const [error, setError] = useState(null);
   const [favorites, setFavorites] = useState(() => storage.getFavorites());
@@ -85,6 +105,7 @@ export default function App() {
 
   const fetchAndShow = async ({ ingredients = [], context = {} }) => {
     setBusy(true);
+    setBusyMessage(pickLoadingMessage());
     setError(null);
     try {
       if (ingredients.length > 0) {
@@ -124,10 +145,17 @@ export default function App() {
       if (fresh.newly.length > 0) showBadgeToast(fresh.newly[0]);
     } catch (e) {
       console.error(e);
-      setError(e.message || 'Something went wrong.');
+      setError(friendlyError(e));
     } finally {
       setBusy(false);
     }
+  };
+
+  const triggerRescueBackup = () => {
+    fetchAndShow({
+      ingredients: lastIngredients,
+      context: { mode: 'emergency', time: 5 },
+    });
   };
 
   const showBadgeToast = (id) => {
@@ -170,6 +198,7 @@ export default function App() {
   const handleAdjust = async (problem) => {
     if (!recipe) return;
     setAdjusting(true);
+    setBusyMessage(pickLoadingMessage());
     setError(null);
     try {
       const fixed = await adjustRecipe({ recipe, problem, profile });
@@ -177,7 +206,7 @@ export default function App() {
       setSeenTitles((prev) => [...prev, fixed.title]);
     } catch (e) {
       console.error(e);
-      setError(e.message || "Couldn't adjust the recipe.");
+      setError(friendlyError(e));
     } finally {
       setAdjusting(false);
     }
@@ -185,6 +214,7 @@ export default function App() {
 
   const handleClone = async (dishName) => {
     setBusy(true);
+    setBusyMessage(pickLoadingMessage());
     setError(null);
     try {
       const r = await cloneDish({ dishName, profile });
@@ -195,7 +225,7 @@ export default function App() {
       setTab('recipe');
     } catch (e) {
       console.error(e);
-      setError(e.message || "Couldn't build that clone.");
+      setError(friendlyError(e));
     } finally {
       setBusy(false);
     }
@@ -228,6 +258,14 @@ export default function App() {
       setStats(nextStats);
       setEarnedBadges(earned);
       if (newly.length > 0) showBadgeToast(newly[0]);
+      if (rating === 'loved') {
+        try {
+          import('canvas-confetti').then((mod) => {
+            const fire = mod.default || mod;
+            fire({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+          });
+        } catch {}
+      }
     }
     setCookOpen(false);
   };
@@ -271,8 +309,14 @@ export default function App() {
     <PhoneFrame>
       <div className="flex flex-col flex-1 min-h-0">
         {error && (
-          <div className="bg-red-50 text-red-700 text-xs px-4 py-2 border-b border-red-100">
-            {error}
+          <div className="bg-red-50 text-red-700 text-xs px-4 py-2 border-b border-red-100 flex items-center gap-2">
+            <span className="flex-1">{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-700 font-bold underline-offset-2 underline"
+            >
+              Try again →
+            </button>
           </div>
         )}
 
@@ -388,15 +432,36 @@ export default function App() {
             recipe={recipe}
             onClose={() => setCookOpen(false)}
             onFinish={finishCooking}
+            onRescueBackup={triggerRescueBackup}
           />
         )}
 
         {badgeToast && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-brand-green text-white px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 animate-[fadeIn_0.3s]">
+          <div
+            className="fixed top-6 left-3 right-3 z-50 bg-brand-green text-white px-4 py-3 rounded-2xl shadow-lg flex items-start gap-3 animate-fade-in-up"
+            style={{ maxWidth: 366, margin: '0 auto' }}
+          >
             <div className="text-2xl">{badgeToast.emoji}</div>
-            <div>
-              <div className="text-xs font-semibold opacity-80">Badge unlocked!</div>
-              <div className="text-sm font-bold">{badgeToast.name}</div>
+            <div className="flex-1">
+              <div className="text-[10px] font-bold opacity-80 uppercase tracking-wider">
+                Badge unlocked — {badgeToast.name}
+              </div>
+              <div className="text-xs font-medium leading-snug mt-0.5">
+                {badgeToast.unlock || badgeToast.desc}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {busy && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-brand-cream/80 backdrop-blur-sm pointer-events-none">
+            <div className="text-center px-6">
+              <div className="text-5xl animate-bounce select-none mb-3" aria-hidden>
+                👨‍🍳
+              </div>
+              <div className="text-sm font-semibold text-brand-green">
+                {busyMessage || 'Searching for something they might actually eat… 🤞'}
+              </div>
             </div>
           </div>
         )}

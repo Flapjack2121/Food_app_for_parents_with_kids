@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 
-export default function CookMode({ recipe, onClose, onFinish }) {
+export default function CookMode({ recipe, onClose, onFinish, onRescueBackup }) {
   const [stepIdx, setStepIdx] = useState(0);
   const [secsLeft, setSecsLeft] = useState(0);
   const [running, setRunning] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
+  const [exitOpen, setExitOpen] = useState(false);
   const tickRef = useRef(null);
   const beepRef = useRef(null);
 
   const steps = recipe?.steps || [];
   const step = steps[stepIdx];
   const isLast = stepIdx >= steps.length - 1;
+  const showEncouragement = stepIdx >= 2;
 
   useEffect(() => {
     if (!step) return;
@@ -90,8 +92,9 @@ export default function CookMode({ recipe, onClose, onFinish }) {
     <div className="fixed inset-0 z-50 bg-brand-cream flex flex-col">
       <div className="flex items-center px-4 pt-12 pb-2">
         <button
-          onClick={onClose}
+          onClick={() => setExitOpen(true)}
           className="text-sm font-semibold text-brand-green bg-white rounded-full px-3 py-1.5 border border-black/5"
+          title="Exit cooking mode"
         >
           ✕ Close
         </button>
@@ -104,6 +107,11 @@ export default function CookMode({ recipe, onClose, onFinish }) {
       <div className="px-5 mt-2">
         <div className="text-xs text-black/55 uppercase tracking-wider">
           Step {stepIdx + 1} of {steps.length}
+          {showEncouragement && (
+            <span className="ml-1 text-brand-green normal-case tracking-normal">
+              — you're doing great 👍
+            </span>
+          )}
         </div>
         <div className="mt-2 h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
           <div
@@ -122,7 +130,10 @@ export default function CookMode({ recipe, onClose, onFinish }) {
         </div>
 
         {totalSecs > 0 && (
-          <div className="mt-8 w-full max-w-[260px]">
+          <div className="mt-6 w-full max-w-[260px]">
+            <div className="text-[11px] text-black/55 mb-2 leading-snug">
+              Timer running — go do something else, we'll make noise when it's done 🔔
+            </div>
             <div className="relative w-44 h-44 mx-auto">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                 <circle
@@ -195,7 +206,7 @@ export default function CookMode({ recipe, onClose, onFinish }) {
             onClick={() => setRatingOpen(true)}
             className="rounded-2xl bg-brand-orange text-white font-semibold py-4 active:scale-[0.99]"
           >
-            ✓ Done Cooking
+            🎉 You made it
           </button>
         ) : (
           <button
@@ -209,13 +220,24 @@ export default function CookMode({ recipe, onClose, onFinish }) {
 
       {ratingOpen && (
         <RatingSheet
-          onPick={(rating) => {
+          recipeTitle={recipe.title}
+          onFinish={(payload) => {
             setRatingOpen(false);
-            onFinish?.({ rating });
+            onFinish?.(payload);
           }}
-          onSkip={() => {
+          onRescueBackup={() => {
             setRatingOpen(false);
-            onFinish?.({ rating: null });
+            onRescueBackup?.();
+          }}
+        />
+      )}
+
+      {exitOpen && (
+        <ExitSheet
+          onCancel={() => setExitOpen(false)}
+          onConfirm={() => {
+            setExitOpen(false);
+            onClose?.();
           }}
         />
       )}
@@ -223,43 +245,162 @@ export default function CookMode({ recipe, onClose, onFinish }) {
   );
 }
 
-function RatingSheet({ onPick, onSkip }) {
-  const opts = [
-    { id: 'disliked', emoji: '👎', label: 'Kids hated it' },
-    { id: 'okay', emoji: '😐', label: 'It was okay' },
-    { id: 'loved', emoji: '👍', label: 'Kids loved it!' },
-  ];
+function ExitSheet({ onCancel, onConfirm }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onSkip} />
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
       <div
         className="relative bg-white w-full max-w-[390px] rounded-t-3xl p-5 pb-7"
         style={{ boxShadow: '0 -10px 30px rgba(0,0,0,0.15)' }}
       >
         <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mb-4" />
         <div className="text-lg font-extrabold text-brand-green text-center">
-          How did it go?
+          Leave cooking mode?
         </div>
         <div className="text-xs text-black/60 text-center mb-3">
-          We'll learn what your family likes.
+          Your progress won't be saved.
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {opts.map((o) => (
-            <button
-              key={o.id}
-              onClick={() => onPick(o.id)}
-              className="bg-brand-cream rounded-2xl p-3 flex flex-col items-center text-center border border-black/5 active:scale-[0.99]"
-            >
-              <span className="text-3xl">{o.emoji}</span>
-              <span className="text-[11px] font-semibold text-brand-green mt-1">
-                {o.label}
-              </span>
-            </button>
-          ))}
+        <div className="space-y-2">
+          <button
+            onClick={onConfirm}
+            className="w-full bg-brand-orange text-white font-bold py-3 rounded-2xl"
+          >
+            Yeah, I'm done
+          </button>
+          <button
+            onClick={onCancel}
+            className="w-full bg-brand-cream text-brand-green font-semibold py-3 rounded-2xl"
+          >
+            No, keep going
+          </button>
         </div>
-        <button onClick={onSkip} className="w-full mt-3 text-sm text-black/60 font-medium">
-          Skip
+      </div>
+    </div>
+  );
+}
+
+function RatingSheet({ recipeTitle, onFinish, onRescueBackup }) {
+  const [stage, setStage] = useState('pick');
+  const [picked, setPicked] = useState(null);
+  const opts = [
+    { id: 'disliked', emoji: '🗑️', label: 'Floor. Immediately.' },
+    { id: 'okay', emoji: '😐', label: "Ate some of it, I'll take it" },
+    { id: 'loved', emoji: '🙌', label: 'They actually ate it!!' },
+  ];
+
+  const choose = (id) => {
+    setPicked(id);
+    setStage('followup');
+  };
+
+  if (stage === 'pick') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-end justify-center">
+        <div className="absolute inset-0 bg-black/40" onClick={() => onFinish({ rating: null })} />
+        <div
+          className="relative bg-white w-full max-w-[390px] rounded-t-3xl p-5 pb-7"
+          style={{ boxShadow: '0 -10px 30px rgba(0,0,0,0.15)' }}
+        >
+          <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mb-4" />
+          <div className="text-2xl mb-1 text-center">🤞</div>
+          <div className="text-lg font-extrabold text-brand-green text-center">
+            Moment of truth…
+          </div>
+          <div className="text-xs text-black/60 text-center mb-3 leading-snug">
+            How did{' '}
+            <span className="font-semibold text-brand-green">{recipeTitle || 'it'}</span> land?
+          </div>
+          <div className="space-y-2">
+            {opts.map((o) => (
+              <button
+                key={o.id}
+                onClick={() => choose(o.id)}
+                className="w-full bg-brand-cream rounded-2xl p-3 flex items-center gap-3 text-left active:scale-[0.99]"
+              >
+                <span className="text-2xl">{o.emoji}</span>
+                <span className="text-sm font-semibold text-brand-green">{o.label}</span>
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => onFinish({ rating: null })}
+            className="w-full mt-3 text-sm text-black/60 font-medium"
+          >
+            Skip
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // followup
+  if (picked === 'disliked') {
+    return (
+      <FollowUp emoji="💔" title="Ugh. We've all been there.">
+        <p className="text-xs text-black/60 leading-snug mb-4">
+          We'll remember this one and avoid similar recipes. Want a 3-minute backup right now?
+        </p>
+        <button
+          onClick={() => {
+            onFinish({ rating: 'disliked' });
+            onRescueBackup?.();
+          }}
+          className="w-full bg-brand-orange text-white font-bold py-3 rounded-2xl mb-2"
+        >
+          Yes, show me backup →
         </button>
+        <button
+          onClick={() => onFinish({ rating: 'disliked' })}
+          className="w-full bg-brand-cream text-brand-green font-semibold py-3 rounded-2xl"
+        >
+          No, ordering pizza tonight 🍕
+        </button>
+      </FollowUp>
+    );
+  }
+  if (picked === 'okay') {
+    return (
+      <FollowUp emoji="🙂" title="Honestly? That's a win.">
+        <p className="text-xs text-black/60 leading-snug mb-4">
+          We'll keep suggesting similar things.
+        </p>
+        <button
+          onClick={() => onFinish({ rating: 'okay' })}
+          className="w-full bg-brand-green text-white font-bold py-3 rounded-2xl"
+        >
+          Back to home →
+        </button>
+      </FollowUp>
+    );
+  }
+  // loved
+  return (
+    <FollowUp emoji="🎉" title="THEY ATE IT.">
+      <p className="text-xs text-black/60 leading-snug mb-4">
+        Screenshot this. Frame it. This doesn't happen every day.
+      </p>
+      <button
+        onClick={() => onFinish({ rating: 'loved' })}
+        className="w-full bg-brand-green text-white font-bold py-3 rounded-2xl"
+      >
+        I know, I'm shocked too →
+      </button>
+    </FollowUp>
+  );
+}
+
+function FollowUp({ emoji, title, children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-black/40" />
+      <div
+        className="relative bg-white w-full max-w-[390px] rounded-t-3xl p-5 pb-7"
+        style={{ boxShadow: '0 -10px 30px rgba(0,0,0,0.15)' }}
+      >
+        <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mb-4" />
+        <div className="text-3xl text-center mb-2">{emoji}</div>
+        <div className="text-xl font-extrabold text-brand-green text-center mb-3">{title}</div>
+        {children}
       </div>
     </div>
   );

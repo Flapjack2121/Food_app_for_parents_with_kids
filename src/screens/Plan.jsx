@@ -37,10 +37,10 @@ export default function Plan({ profile, onOpenRecipe, onBuildShoppingList }) {
       <div className="px-5 pt-12 pb-2 flex items-center">
         <div>
           <div className="text-2xl font-extrabold text-brand-green tracking-tight">
-            Week Plan
+            This Week's Plan
           </div>
           <div className="text-[11px] text-brand-green/60 font-medium">
-            {filledCount} of 7 days planned
+            {filledCount} of 7 days — no pressure, plan what you can
           </div>
         </div>
       </div>
@@ -90,7 +90,9 @@ export default function Plan({ profile, onOpenRecipe, onBuildShoppingList }) {
               <div className="text-[10px] uppercase tracking-wider text-brand-green/70 font-bold w-12">
                 {d}
               </div>
-              <div className="text-sm text-black/40 italic">No recipe yet</div>
+              <div className="text-sm text-black/45 italic">
+                free day / order in / cereal for dinner 🥣
+              </div>
             </div>
           );
         })}
@@ -109,7 +111,7 @@ export default function Plan({ profile, onOpenRecipe, onBuildShoppingList }) {
           className="btn-primary w-full rounded-2xl text-white font-bold py-4 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99]"
         >
           <SparkIcon size={18} stroke="#fff" />
-          {busy ? 'Building your week…' : 'Auto-fill Week'}
+          {busy ? 'Building your week…' : 'Plan the whole week for me'}
         </button>
         <button
           disabled={filledCount === 0}
@@ -121,7 +123,7 @@ export default function Plan({ profile, onOpenRecipe, onBuildShoppingList }) {
             boxShadow: '0 6px 16px rgba(232,97,10,0.32)',
           }}
         >
-          🛒 Generate Shopping List
+          🛒 Tell me what to buy
         </button>
       </div>
     </div>

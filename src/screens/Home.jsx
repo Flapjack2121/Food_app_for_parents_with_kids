@@ -23,9 +23,9 @@ const TIMES = [
 ];
 
 const ENERGY = [
-  { id: 'exhausted', emoji: '😴', label: 'Exhausted' },
-  { id: 'okay', emoji: '😐', label: 'Okay' },
-  { id: 'energized', emoji: '💪', label: 'Energized' },
+  { id: 'exhausted', emoji: '😤', label: 'Already frustrated' },
+  { id: 'okay', emoji: '😔', label: 'Just get it done' },
+  { id: 'energized', emoji: '🙂', label: 'Actually okay today' },
 ];
 
 const RESCUE = [
@@ -33,6 +33,25 @@ const RESCUE = [
   { id: 'very-quick', emoji: '😰', title: 'Very Quick', sub: '≤10 min · ≤4 ingredients' },
   { id: 'emergency', emoji: '🆘', title: 'Emergency', sub: '≤5 min · whatever you have' },
 ];
+
+function getGreeting(name) {
+  const n = name || 'there';
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11)
+    return {
+      title: `Morning ${n}.`,
+      sub: "Let's make today's meals as painless as possible. ☀️",
+    };
+  if (h >= 11 && h < 17)
+    return {
+      title: `Hey ${n}.`,
+      sub: "What's the dinner situation looking like today? 🤔",
+    };
+  return {
+    title: `It's dinner time, ${n}.`,
+    sub: 'Let’s find something they might actually eat. 🤞',
+  };
+}
 
 export default function Home({
   profile,
@@ -67,8 +86,11 @@ export default function Home({
     return Array.from(new Set([...picked, ...typed]));
   };
 
-  const find = () =>
-    onFind({ ingredients: allIngredients(), context: { time, energy, mode: 'normal' } });
+  const find = () => {
+    const energyTime =
+      energy === 'exhausted' ? Math.min(time, 10) : energy === 'okay' ? Math.min(time, 20) : time;
+    onFind({ ingredients: allIngredients(), context: { time: energyTime, energy, mode: 'normal' } });
+  };
 
   const triggerRescue = (mode) => {
     setRescueOpen(false);
@@ -103,7 +125,9 @@ export default function Home({
           <div className="font-extrabold text-brand-green leading-tight text-[17px] tracking-tight">
             Little Helpers
           </div>
-          <div className="text-[11px] text-brand-green/70">Simple meals. Happy families.</div>
+          <div className="text-[11px] text-brand-green/70">
+            Less stress. More chances they'll eat it.
+          </div>
         </div>
         {(earnedBadges?.length || 0) > 0 && (
           <button
@@ -126,22 +150,22 @@ export default function Home({
           }}
         >
           <div className="flex-1 relative z-10">
-            <div className="text-2xl font-extrabold text-brand-green leading-tight tracking-tight">
-              Hi {profile?.parentName || profile?.name || 'there'}!
+            <div className="text-[22px] font-extrabold text-brand-green leading-tight tracking-tight">
+              {getGreeting(profile?.parentName || profile?.name).title}
             </div>
             <div className="text-[13px] text-black/65 mt-1 leading-snug">
-              Let's turn what you have into something delicious.
+              {getGreeting(profile?.parentName || profile?.name).sub}
             </div>
             {(showStreak || stats?.totalCooked > 0) && (
               <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
                 {showStreak && (
                   <span className="text-[11px] bg-brand-orange/10 text-brand-orange font-semibold rounded-full px-2.5 py-1">
-                    🔥 {stats.streak}-day streak
+                    🔥 {stats.streak} days in a row. Genuinely impressive with kids.
                   </span>
                 )}
-                {stats?.totalCooked > 0 && (
+                {!showStreak && stats?.totalCooked > 0 && (
                   <span className="text-[11px] bg-brand-green/10 text-brand-green font-semibold rounded-full px-2.5 py-1">
-                    {stats.totalCooked} cooked
+                    {stats.totalCooked} dinners survived
                   </span>
                 )}
               </div>
@@ -159,7 +183,7 @@ export default function Home({
         <div className="px-5 mt-4">
           <div className="flex items-center justify-between mb-2 px-1">
             <div className="text-[11px] font-bold uppercase tracking-wider text-brand-green/70">
-              Today's suggestion
+              Might work today
             </div>
             <button
               onClick={onRefreshSuggestion}
@@ -196,7 +220,7 @@ export default function Home({
       )}
 
       <div className="px-5 mt-5">
-        <SectionLabel>How much time do you have?</SectionLabel>
+        <SectionLabel>How long can you realistically spend?</SectionLabel>
         <div className="grid grid-cols-4 gap-2">
           {TIMES.map((t) => (
             <Chip key={t.id} on={time === t.id} onClick={() => setTime(t.id)}>
@@ -207,11 +231,11 @@ export default function Home({
       </div>
 
       <div className="px-5 mt-3">
-        <SectionLabel>How's your energy today?</SectionLabel>
-        <div className="grid grid-cols-3 gap-2">
+        <SectionLabel>How are you feeling about cooking right now?</SectionLabel>
+        <div className="grid grid-cols-1 gap-2">
           {ENERGY.map((e) => (
             <Chip key={e.id} on={energy === e.id} onClick={() => setEnergy(e.id)}>
-              <span className="mr-1">{e.emoji}</span>
+              <span className="mr-1.5">{e.emoji}</span>
               {e.label}
             </Chip>
           ))}
@@ -219,11 +243,11 @@ export default function Home({
       </div>
 
       <div className="px-5 mt-4">
-        <SectionLabel>What's in your fridge?</SectionLabel>
+        <SectionLabel>What are you working with today?</SectionLabel>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="e.g. chicken, broccoli, pasta…"
+          placeholder="whatever's in there… chicken, eggs, that sad broccoli from 3 days ago…"
           className="w-full bg-white rounded-2xl px-4 py-3.5 text-base outline-none shadow-soft focus:ring-2 focus:ring-brand-green/20 transition-all"
         />
         {hasMemory && (
@@ -231,9 +255,9 @@ export default function Home({
             onClick={reuseLast}
             className="mt-2 w-full text-xs bg-brand-green/8 text-brand-green rounded-2xl px-3 py-2.5 font-medium text-left flex items-center gap-2"
           >
-            <span className="text-base">🧠</span>
+            <span className="text-base">😅</span>
             <span className="flex-1">
-              Still have these from last time?{' '}
+              Still working through the same fridge? Same.{' '}
               <span className="text-brand-green/80">
                 {lastIngredients.slice(0, 4).join(', ')}
                 {lastIngredients.length > 4 ? '…' : ''}
@@ -278,7 +302,7 @@ export default function Home({
           style={{ height: 56 }}
         >
           <SparkIcon size={18} stroke="#fff" />{' '}
-          {busy ? 'Cooking up ideas…' : 'Find Recipe'}
+          {busy ? 'Searching…' : 'Find Something They Might Eat'}
         </button>
         <button
           disabled={busy}
@@ -286,7 +310,7 @@ export default function Home({
           className="w-full rounded-2xl bg-transparent text-brand-orange font-semibold border-2 border-brand-orange flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99] transition-all"
           style={{ height: 48 }}
         >
-          <BoltIcon size={16} /> 🆘 Rescue Mode
+          <BoltIcon size={16} /> I just need something fast
         </button>
         <button
           disabled={busy}
@@ -294,8 +318,7 @@ export default function Home({
           className="w-full rounded-xl bg-transparent text-brand-green text-sm font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 active:opacity-70 transition-all underline-offset-4 hover:underline"
           style={{ height: 44 }}
         >
-          🍟 Healthy Clone
-          <span className="text-[11px] text-black/50 font-medium">— make a homemade version</span>
+          🍟 They only eat nuggets? We got you.
         </button>
       </div>
 
