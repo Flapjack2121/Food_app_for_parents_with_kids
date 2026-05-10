@@ -15,12 +15,54 @@ const KEYS = {
 };
 
 export const BADGES = [
-  { id: 'first', emoji: '🍳', name: 'First Recipe', desc: 'Cook your first recipe' },
-  { id: 'planner', emoji: '📅', name: 'Week Planner', desc: 'Complete a 7-day plan' },
-  { id: 'fire', emoji: '🔥', name: 'On Fire', desc: '7-day cooking streak' },
-  { id: 'familyChef', emoji: '⭐', name: 'Family Chef', desc: 'Cook 10 recipes' },
-  { id: 'rescueHero', emoji: '🆘', name: 'Rescue Hero', desc: 'Use Rescue Mode 3 times' },
-  { id: 'noWaste', emoji: '♻️', name: 'No Waste', desc: 'Use all fridge ingredients 5 times' },
+  {
+    id: 'first',
+    emoji: '🍳',
+    name: 'First Recipe',
+    desc: 'Cook your first recipe',
+    unlock: 'You cooked dinner. With kids around. That is not nothing.',
+    requirement: 'Cook 1 recipe to unlock this',
+  },
+  {
+    id: 'planner',
+    emoji: '📅',
+    name: 'Week Planner',
+    desc: 'Complete a 7-day plan',
+    unlock: 'A whole week planned. Your future self will thank you on Thursday.',
+    requirement: 'Build a full 7-day plan to unlock this',
+  },
+  {
+    id: 'fire',
+    emoji: '🔥',
+    name: 'On Fire',
+    desc: '7-day cooking streak',
+    unlock: '7 days in a row. Actual superhero behavior.',
+    requirement: 'Cook 7 days in a row to unlock this',
+  },
+  {
+    id: 'familyChef',
+    emoji: '⭐',
+    name: 'Family Chef',
+    desc: 'Cook 10 recipes',
+    unlock: "10 recipes cooked. You've officially moved past survival mode.",
+    requirement: 'Cook 10 recipes to unlock this',
+  },
+  {
+    id: 'rescueHero',
+    emoji: '🆘',
+    name: 'Rescue Hero',
+    desc: 'Use Rescue Mode 3 times',
+    unlock: "Used rescue mode 3 times. No shame — that's exactly what it's for.",
+    requirement: 'Use Rescue Mode 3 times to unlock this',
+  },
+  {
+    id: 'noWaste',
+    emoji: '♻️',
+    name: 'No Waste',
+    desc: 'Use all fridge ingredients 5 times',
+    unlock: '5 times you used everything in the fridge. Impressive and responsible.',
+    requirement: 'Use everything in the fridge 5 times to unlock this',
+  },
 ];
 
 function read(key, fallback) {

@@ -15,16 +15,37 @@ const ALLERGY_OPTIONS = [
 ];
 
 const SKILLS = [
-  { id: 'beginner', label: 'Beginner', sub: 'Simple steps, extra tips' },
-  { id: 'comfortable', label: 'Comfortable', sub: 'Balanced weeknight cooking' },
-  { id: 'confident', label: 'Confident', sub: 'Real techniques, more variety' },
+  { id: 'beginner', label: 'Survival mode', sub: 'Clear steps, zero assumptions' },
+  { id: 'comfortable', label: 'Getting by', sub: 'Normal recipes, not too complicated' },
+  { id: 'confident', label: 'Actually enjoy it', sub: 'Bring on the variety' },
 ];
 
 const STEP_META = [
-  { emoji: '👋', subtitle: "Let's get to know your family 👨‍👩‍👧" },
-  { emoji: '👶', subtitle: 'Tell us about your little ones 🧒' },
-  { emoji: '🛡️', subtitle: "Safety first — we'll never suggest these 🛡️" },
-  { emoji: '🍳', subtitle: 'Last step! Almost ready to cook 🍳' },
+  {
+    emoji: '👋',
+    headline: 'Hey, you showed up. That counts. 👋',
+    subtitle: "Let's make dinner a little less painful. What should we call you?",
+    next: "Let's do this →",
+  },
+  {
+    emoji: '🧒',
+    headline: 'Tell us about your little food critics 🧒',
+    subtitle: "We'll make sure every recipe actually has a chance.",
+    next: "That's my crew →",
+  },
+  {
+    emoji: '🛡️',
+    headline: "Hard no's only 🛡️",
+    subtitle: 'These will never appear in any suggestion. Ever. We promise.',
+    next: 'Got it, keep these out →',
+  },
+  {
+    emoji: '🍳',
+    headline: 'How are you with cooking? 🍳',
+    subtitle:
+      "No judgment — after a long day with kids, 'Survival mode' is the right answer for everyone.",
+    next: 'Almost there →',
+  },
 ];
 
 export default function Onboarding({ onDone }) {
@@ -49,17 +70,17 @@ export default function Onboarding({ onDone }) {
   const toggleAllergy = (a) =>
     setAllergies((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
 
-  const finish = () => {
+  const saveAndCelebrate = () => {
     storage.setProfile({
       parentName: parentName.trim() || 'there',
       children,
       allergies,
       cookingSkill,
     });
-    onDone();
+    setStep(4);
   };
 
-  const next = () => setStep((s) => Math.min(3, s + 1));
+  const next = () => setStep((s) => Math.min(4, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
 
   const Header = () => (
@@ -67,10 +88,37 @@ export default function Onboarding({ onDone }) {
       <Logo />
       <div>
         <div className="font-extrabold text-brand-green leading-tight text-lg">Little Helpers</div>
-        <div className="text-xs text-brand-green/70">Simple meals. Happy families.</div>
+        <div className="text-xs text-brand-green/70">Less stress. More chances they'll eat it.</div>
       </div>
     </div>
   );
+
+  if (step === 4) {
+    return (
+      <div className="flex flex-col flex-1 bg-brand-cream items-center justify-center px-6 text-center">
+        <div className="text-[80px] mb-4 select-none" aria-hidden>
+          🎉
+        </div>
+        <div className="text-2xl font-extrabold text-brand-green leading-tight">
+          You're all set, {parentName.trim() || 'friend'}.
+        </div>
+        <div className="text-sm text-black/65 mt-3 leading-relaxed max-w-xs">
+          No meal plans required. No judgment if they throw it on the floor. Just open the fridge
+          and let's figure it out.
+        </div>
+        <button
+          onClick={onDone}
+          className="mt-8 w-full max-w-xs rounded-xl bg-brand-green text-white font-bold flex items-center justify-center gap-2"
+          style={{ height: 56 }}
+        >
+          Let's find dinner →
+        </button>
+      </div>
+    );
+  }
+
+  const meta = STEP_META[step];
+  const finalStep = step === 3;
 
   return (
     <div className="flex flex-col flex-1 bg-brand-cream overflow-y-auto no-scrollbar">
@@ -79,17 +127,20 @@ export default function Onboarding({ onDone }) {
       <div className="px-5 pt-3 pb-2">
         <Stepper step={step} total={4} />
         <div className="mt-3 text-center text-[13px] text-brand-green/80 font-medium">
-          {STEP_META[step].subtitle}
+          {meta.subtitle}
         </div>
       </div>
 
       <div className="flex-1 px-5 pb-5 flex flex-col" style={{ minHeight: '65vh' }}>
-        <div className="text-center text-[80px] leading-none mb-4 select-none" aria-hidden>
-          {STEP_META[step].emoji}
+        <div className="text-center text-[80px] leading-none mb-3 select-none" aria-hidden>
+          {meta.emoji}
+        </div>
+        <div className="text-center text-xl font-extrabold text-brand-green leading-tight mb-5 px-2">
+          {meta.headline}
         </div>
 
         {step === 0 && (
-          <Card title="Hi! 👋" subtitle="What's your name?">
+          <Card>
             <input
               autoFocus
               value={parentName}
@@ -102,7 +153,8 @@ export default function Onboarding({ onDone }) {
 
         {step === 1 && (
           <>
-            <Card title="How many kids?" subtitle="Tap to adjust.">
+            <Card>
+              <div className="text-sm text-brand-green/80 font-semibold mb-2">How many kids?</div>
               <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-3">
                 <Round onClick={() => updateCount(count - 1)}>−</Round>
                 <div className="text-3xl font-bold text-brand-green">{count}</div>
@@ -141,8 +193,13 @@ export default function Onboarding({ onDone }) {
                       />
                     </div>
                   </div>
-                  <label className="flex items-center justify-between text-sm">
-                    <span>Picky eater</span>
+                  <label className="flex items-start justify-between text-xs gap-3">
+                    <span className="leading-snug">
+                      <span className="font-semibold text-sm text-brand-green">Picky eater</span>
+                      <span className="block text-black/55 mt-0.5">
+                        refuses everything, sends back meals, throws food, the works
+                      </span>
+                    </span>
                     <Toggle
                       on={k.pickyEater}
                       onChange={(on) =>
@@ -159,7 +216,7 @@ export default function Onboarding({ onDone }) {
         )}
 
         {step === 2 && (
-          <Card title="Allergies & restrictions" subtitle="We'll keep these out of every recipe.">
+          <Card>
             <div className="grid grid-cols-2 gap-2">
               {ALLERGY_OPTIONS.map((a) => {
                 const on = allergies.includes(a);
@@ -183,7 +240,7 @@ export default function Onboarding({ onDone }) {
         )}
 
         {step === 3 && (
-          <Card title="Cooking skill" subtitle="So we can match recipe complexity.">
+          <Card>
             <div className="space-y-2">
               {SKILLS.map((s) => {
                 const on = cookingSkill === s.id;
@@ -221,19 +278,19 @@ export default function Onboarding({ onDone }) {
             Back
           </button>
         )}
-        {step < 3 ? (
+        {finalStep ? (
+          <button
+            onClick={saveAndCelebrate}
+            className="flex-1 rounded-2xl bg-brand-orange text-white font-semibold py-3"
+          >
+            {meta.next}
+          </button>
+        ) : (
           <button
             onClick={next}
             className="flex-1 rounded-2xl bg-brand-green text-white font-semibold py-3 flex items-center justify-center gap-2"
           >
-            Next <ArrowRight size={18} stroke="#fff" />
-          </button>
-        ) : (
-          <button
-            onClick={finish}
-            className="flex-1 rounded-2xl bg-brand-orange text-white font-semibold py-3"
-          >
-            Let's cook!
+            {meta.next}
           </button>
         )}
       </div>
@@ -241,14 +298,8 @@ export default function Onboarding({ onDone }) {
   );
 }
 
-function Card({ title, subtitle, children }) {
-  return (
-    <div className="bg-white/60 rounded-3xl p-4 border border-black/5">
-      <div className="text-xl font-bold text-brand-green">{title}</div>
-      {subtitle && <div className="text-sm text-black/60 mb-3">{subtitle}</div>}
-      <div className="mt-3">{children}</div>
-    </div>
-  );
+function Card({ children }) {
+  return <div className="bg-white/60 rounded-3xl p-4 border border-black/5">{children}</div>;
 }
 
 function Toggle({ on, onChange }) {
