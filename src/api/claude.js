@@ -68,6 +68,7 @@ function jsonShape() {
       "difficulty": "Easy" | "Medium" | "Hard",
       "kidFriendly": boolean,
       "kidFriendlyReason": "short explanation (e.g. 'Soft texture, mild flavor')",
+      "pickyEaterScore": "integer 0-100. Rough fraction of picky eaters who would actually eat this. Easy/familiar dishes 75-90, medium dishes 50-70, anything adventurous 30-50",
       "calories": number,
       "protein": number,
       "carbs": number,
@@ -195,6 +196,17 @@ function normaliseRecipe(r, ingredients = []) {
           timerSeconds: Number(s.timerSeconds) || detectTimer(s.instruction || ''),
         }
   );
+  let pickyScore =
+    typeof r.pickyEaterScore === 'number' ? Math.round(r.pickyEaterScore) : null;
+  if (pickyScore == null) {
+    const diff = (r.difficulty || 'Easy').toLowerCase();
+    const t = typeof r.prepTime === 'number' ? r.prepTime : parsePrepTime(r.prepTime);
+    if (diff === 'easy') pickyScore = t <= 15 ? 85 : 75;
+    else if (diff === 'medium') pickyScore = 60;
+    else pickyScore = 40;
+  }
+  pickyScore = Math.max(20, Math.min(95, pickyScore));
+
   return {
     id: r.id || newId(),
     title: r.title || 'Untitled',
@@ -204,6 +216,7 @@ function normaliseRecipe(r, ingredients = []) {
     difficulty: r.difficulty || 'Easy',
     kidFriendly: r.kidFriendly !== false,
     kidFriendlyReason: r.kidFriendlyReason || '',
+    pickyEaterScore: pickyScore,
     calories: r.calories || null,
     protein: r.protein || null,
     carbs: r.carbs || null,
