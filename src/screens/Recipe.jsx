@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ClockIcon,
   UsersIcon,
@@ -19,13 +19,33 @@ const COMPLAINTS = [
 
 export default function Recipe({
   recipe,
+  recipes,
+  activeIndex = 0,
+  onSwipe,
   onCook,
   onNext,
+  onPrev,
   onBack,
   onAdjust,
   busy,
   adjusting,
 }) {
+  const touchStartX = useRef(null);
+  const totalRecipes = recipes?.length || 1;
+  const showDots = totalRecipes > 1;
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current == null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) onSwipe?.('next');
+      else onSwipe?.('prev');
+    }
+    touchStartX.current = null;
+  };
   const [fav, setFav] = useState(recipe ? storage.isFavorite(recipe.id) : false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -65,7 +85,11 @@ export default function Recipe({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto no-scrollbar">
+    <div
+      className="flex-1 overflow-y-auto no-scrollbar"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="px-5 pt-12 pb-2 flex items-center">
         <button
           onClick={onBack}
@@ -74,8 +98,28 @@ export default function Recipe({
         >
           ←
         </button>
-        <div className="flex-1 text-center text-sm font-bold text-brand-green tracking-tight">
-          Recipe
+        <div className="flex-1 text-center">
+          {showDots ? (
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: totalRecipes }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={`rounded-full transition-all ${
+                      i === activeIndex
+                        ? 'bg-brand-green w-4 h-1.5'
+                        : 'bg-black/20 w-1.5 h-1.5'
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="text-[10px] text-black/55 font-medium">
+                Recipe {activeIndex + 1} of {totalRecipes}
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm font-bold text-brand-green tracking-tight">Recipe</div>
+          )}
         </div>
         <button
           onClick={toggleFav}

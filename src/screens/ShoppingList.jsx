@@ -10,7 +10,7 @@ const CATEGORIES = [
   { id: 'Frozen', emoji: '❄️', color: '#7DB8D9' },
 ];
 
-export default function ShoppingList({ list, onChange }) {
+export default function ShoppingList({ list, onChange, onNavigate }) {
   const items = list?.items || [];
   const baseServings = list?.baseServings || 4;
   const [servings, setServings] = useState(list?.servings || baseServings);
@@ -97,11 +97,29 @@ export default function ShoppingList({ list, onChange }) {
       </div>
 
       {items.length === 0 ? (
-        <div className="px-5 mt-12 text-center text-black/60">
-          <div className="text-4xl mb-2">🛒</div>
-          <div className="font-bold text-brand-green">Your list is empty.</div>
-          <div className="text-sm mt-1">
-            Tap "Cook This!" on a recipe or build one from your week plan.
+        <div className="px-5 mt-10 text-center">
+          <div className="text-[64px] leading-none mb-4 select-none" aria-hidden>
+            🛒
+          </div>
+          <div className="text-xl font-extrabold text-brand-green">Your list is empty</div>
+          <div className="text-sm text-black/60 mt-2 max-w-[280px] mx-auto leading-snug">
+            Cook a recipe or plan your week to build your shopping list automatically
+          </div>
+          <div className="mt-6 space-y-2.5 max-w-[280px] mx-auto">
+            <button
+              onClick={() => onNavigate?.('home')}
+              className="w-full rounded-xl bg-brand-green text-white font-bold flex items-center justify-center gap-2 active:scale-[0.99] transition-all"
+              style={{ height: 48 }}
+            >
+              → Find a Recipe
+            </button>
+            <button
+              onClick={() => onNavigate?.('plan')}
+              className="w-full rounded-xl bg-transparent text-brand-green font-bold border-2 border-brand-green flex items-center justify-center gap-2 active:scale-[0.99] transition-all"
+              style={{ height: 48 }}
+            >
+              → Plan my Week
+            </button>
           </div>
         </div>
       ) : (

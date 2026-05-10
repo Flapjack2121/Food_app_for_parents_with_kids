@@ -20,6 +20,13 @@ const SKILLS = [
   { id: 'confident', label: 'Confident', sub: 'Real techniques, more variety' },
 ];
 
+const STEP_META = [
+  { emoji: '👋', subtitle: "Let's get to know your family 👨‍👩‍👧" },
+  { emoji: '👶', subtitle: 'Tell us about your little ones 🧒' },
+  { emoji: '🛡️', subtitle: "Safety first — we'll never suggest these 🛡️" },
+  { emoji: '🍳', subtitle: 'Last step! Almost ready to cook 🍳' },
+];
+
 export default function Onboarding({ onDone }) {
   const [step, setStep] = useState(0);
   const [parentName, setParentName] = useState('');
@@ -71,9 +78,16 @@ export default function Onboarding({ onDone }) {
 
       <div className="px-5 pt-3 pb-2">
         <Stepper step={step} total={4} />
+        <div className="mt-3 text-center text-[13px] text-brand-green/80 font-medium">
+          {STEP_META[step].subtitle}
+        </div>
       </div>
 
-      <div className="flex-1 px-5 pb-5">
+      <div className="flex-1 px-5 pb-5 flex flex-col" style={{ minHeight: '65vh' }}>
+        <div className="text-center text-[80px] leading-none mb-4 select-none" aria-hidden>
+          {STEP_META[step].emoji}
+        </div>
+
         {step === 0 && (
           <Card title="Hi! 👋" subtitle="What's your name?">
             <input
@@ -271,7 +285,9 @@ function Stepper({ step, total }) {
       {Array.from({ length: total }).map((_, i) => (
         <div
           key={i}
-          className={`h-1.5 flex-1 rounded-full ${i <= step ? 'bg-brand-green' : 'bg-black/10'}`}
+          className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ease-out ${
+            i <= step ? 'bg-brand-green' : 'bg-black/10'
+          }`}
         />
       ))}
     </div>

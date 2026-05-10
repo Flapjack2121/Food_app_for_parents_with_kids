@@ -274,7 +274,8 @@ export default function Home({
         <button
           disabled={busy}
           onClick={find}
-          className="btn-primary w-full rounded-2xl text-white font-bold py-4 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99] transition-all"
+          className="btn-primary w-full rounded-2xl text-white font-bold flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99] transition-all"
+          style={{ height: 56 }}
         >
           <SparkIcon size={18} stroke="#fff" />{' '}
           {busy ? 'Cooking up ideas…' : 'Find Recipe'}
@@ -282,17 +283,19 @@ export default function Home({
         <button
           disabled={busy}
           onClick={() => setRescueOpen(true)}
-          className="btn-orange w-full rounded-2xl text-white font-bold py-4 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99] transition-all"
+          className="w-full rounded-2xl bg-transparent text-brand-orange font-semibold border-2 border-brand-orange flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99] transition-all"
+          style={{ height: 48 }}
         >
-          <BoltIcon size={18} /> 🆘 Rescue Mode
+          <BoltIcon size={16} /> 🆘 Rescue Mode
         </button>
         <button
           disabled={busy}
           onClick={() => setCloneOpen(true)}
-          className="w-full rounded-2xl bg-white text-brand-green font-semibold py-3 shadow-soft flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.99]"
+          className="w-full rounded-xl bg-transparent text-brand-green text-sm font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 active:opacity-70 transition-all underline-offset-4 hover:underline"
+          style={{ height: 44 }}
         >
           🍟 Healthy Clone
-          <span className="text-[11px] text-black/45 font-medium">— make a homemade version</span>
+          <span className="text-[11px] text-black/50 font-medium">— make a homemade version</span>
         </button>
       </div>
 
